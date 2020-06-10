@@ -8,6 +8,7 @@
  visit the Lex Getting Started documentation http://docs.aws.amazon.com/lex/latest/dg/getting-started.html.
 """
 
+import psycopg2
 import json
 import dateutil.parser
 import datetime
@@ -18,15 +19,13 @@ import random
 import logging
 import sys
 import urllib.parse as up
-from datetime import timedelta  
+from datetime import timedelta
 import urllib3
-#import requests
-#from botocore.vendored import requests
-
+# import requests
+# from botocore.vendored import requests
 
 
 sys.path.insert(0, '/psycopg2')
-import psycopg2
 up.uses_netloc.append("postgres")
 
 # url = up.urlparse(os.environ[
@@ -37,44 +36,44 @@ up.uses_netloc.append("postgres")
 #                         password=url.password,
 #                         host=url.hostname,
 #                         port=url.port)
-##conn = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+# conn = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
 
 
-xxx={
-  "messageVersion": "1.0",
-  "invocationSource": "DialogCodeHook",
-  "userId": "user-1",
-  "sessionAttributes": {},
-  "bot": {
-    "name": "VietnameseHospitalBot",
-    "alias": "$LATEST",
-    "version": "$LATEST"
-  },
-  "outputDialogMode": "Text",
-  "currentIntent": {
-    "name": "VietnameseUpdateAppointment",
-    "slots": {
-    "AccountFBMakeAppointment": "Tài khoản này",
-    "Appointment": "Dr Tran Nhan Tuan",
-    "Confirmation": None,
-    "Date": "2021-04-05",
-    "DateOfBird": None,
-    "Doctor": "Dr Nguyen Thi Ngoc My",
-    "Name": None,
-    "PhoneNumber": None,
-    "Speciality": "Dermatology",
-    "Time": None
-  }
-  },
-  "requestAttributes": {
-    "x-amz-lex:facebook-page-id": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",  
-    "x-amz-lex:channel-id": "XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",  
-    "x-amz-lex:webhook-endpoint-url": "https://channels.lex.us-east-1.amazonaws.com/facebook/webhook/XXX-XXXX-XXXXXXXXX",  
-    "x-amz-lex:accept-content-types": "PlainText",  
-    "x-amz-lex:user-id": "2768186586569088",  
-    "x-amz-lex:channel-name": "FacebookLexBotAppName",  
-    "x-amz-lex:channel-type": "Facebook"  
-}
+xxx = {
+    "messageVersion": "1.0",
+    "invocationSource": "DialogCodeHook",
+    "userId": "user-1",
+    "sessionAttributes": {},
+    "bot": {
+        "name": "VietnameseHospitalBot",
+        "alias": "$LATEST",
+        "version": "$LATEST"
+    },
+    "outputDialogMode": "Text",
+    "currentIntent": {
+        "name": "VietnameseUpdateAppointment",
+        "slots": {
+            "AccountFBMakeAppointment": "Tài khoản này",
+            "Appointment": "Dr Tran Nhan Tuan",
+            "Confirmation": None,
+            "Date": "2021-04-05",
+            "DateOfBird": None,
+            "Doctor": "Dr Nguyen Thi Ngoc My",
+            "Name": None,
+            "PhoneNumber": None,
+            "Speciality": "Dermatology",
+            "Time": None
+        }
+    },
+    "requestAttributes": {
+        "x-amz-lex:facebook-page-id": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "x-amz-lex:channel-id": "XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+        "x-amz-lex:webhook-endpoint-url": "https://channels.lex.us-east-1.amazonaws.com/facebook/webhook/XXX-XXXX-XXXXXXXXX",
+        "x-amz-lex:accept-content-types": "PlainText",
+        "x-amz-lex:user-id": "2768186586569088",
+        "x-amz-lex:channel-name": "FacebookLexBotAppName",
+        "x-amz-lex:channel-type": "Facebook"
+    }
 }
 
 logger = logging.getLogger()
@@ -136,6 +135,7 @@ def close(session_attributes, fulfillment_state, message):
 
     return response
 
+
 def close2(session_attributes, fulfillment_state, message):
     response = {
         'sessionAttributes': session_attributes,
@@ -147,31 +147,30 @@ def close2(session_attributes, fulfillment_state, message):
                 "version": 1,
                 "contentType": "application/vnd.amazonaws.card.generic",
                 "genericAttachments": [
-                {
-                    "title":"Các dịch vụ hỗ trợ của Chatbot",
-                    "subTitle":"Bạn muốn được hỗ trợ dịch vụ nào?",
-                    "imageUrl":"https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18",
-                    "attachmentLinkUrl":"https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour",
-                    "buttons":[ 
                     {
-                        "text":"Lấy lịch hẹn",
-                        "value":"lấy lịch hẹn"
-                    },
-                    {
-                        "text":"Chỉnh sửa lịch hẹn",
-                        "value":"Chỉnh sửa lịch hẹn"
-                    },
-                    {
-                        "text":"Hủy lịch hẹn",
-                        "value":"hủy hẹn"
-                    } ]
-                }] 
+                        "title": "Các dịch vụ hỗ trợ của Chatbot",
+                        "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
+                        "imageUrl": "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18",
+                        "attachmentLinkUrl": "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour",
+                        "buttons": [
+                            {
+                                "text": "Lấy lịch hẹn",
+                                "value": "lấy lịch hẹn"
+                            },
+                            {
+                                "text": "Chỉnh sửa lịch hẹn",
+                                "value": "Chỉnh sửa lịch hẹn"
+                            },
+                            {
+                                "text": "Hủy lịch hẹn",
+                                "value": "hủy hẹn"
+                            }]
+                    }]
             }
         }
     }
 
     return response
-
 
 
 def delegate(session_attributes, slots):
@@ -189,33 +188,33 @@ def build_response_card(title, subtitle, options):
     Build a responseCard with a title, subtitle, and an optional set of options which should be displayed as buttons.
     """
     buttons = None
-    genericAttachments=[]
+    genericAttachments = []
     if options is not None:
-        buttons = []  
-        genericAttachmentElement={}
-        cnt=0
-        for i in range(len(options)): 
+        buttons = []
+        genericAttachmentElement = {}
+        cnt = 0
+        for i in range(len(options)):
             buttons.append(options[i])
-            cnt=cnt+1
-            if cnt==3 or i==len(options)-1:
-                genericAttachmentElement={
-                'title': title,
-                'subTitle': subtitle,
-                'buttons': buttons
-                }   
+            cnt = cnt+1
+            if cnt == 3 or i == len(options)-1:
+                genericAttachmentElement = {
+                    'title': title,
+                    'subTitle': subtitle,
+                    'buttons': buttons
+                }
                 genericAttachments.append(genericAttachmentElement)
-                cnt=0
-                buttons=[]
-            
+                cnt = 0
+                buttons = []
+
     return {
         'contentType':
         'application/vnd.amazonaws.card.generic',
         'version':
         1,
         'genericAttachments': genericAttachments
-        }
+    }
 
-    # return 
+    # return
     #   {
     #     "attachmentLinkUrl": null,
     #     "buttons": [
@@ -277,33 +276,32 @@ def try_ex(func):
 
 def increment_time_by_thirty_mins(appointment_time):
     hour, minute = map(int, appointment_time.split(':'))
-    temp=hour*60+minute+30
-    hour=temp//60
-    minute=temp%60
-    hour_str=hour
-    minute_str=minute
-    if(hour<10):
-        hour_str='0{}'.format(hour)
-    if(minute<10):
-        minute_str='0{}'.format(minute)
-    return '{}:{}'.format(hour_str,minute_str)
+    temp = hour*60+minute+30
+    hour = temp//60
+    minute = temp % 60
+    hour_str = hour
+    minute_str = minute
+    if(hour < 10):
+        hour_str = '0{}'.format(hour)
+    if(minute < 10):
+        minute_str = '0{}'.format(minute)
+    return '{}:{}'.format(hour_str, minute_str)
 
 
-def compare_time(time1,time2):
+def compare_time(time1, time2):
     hour1, minute1 = map(int, time1.split(':'))
     hour2, minute2 = map(int, time2.split(':'))
-    if hour1>hour2:
+    if hour1 > hour2:
         return 1
-    elif hour1<hour2:
+    elif hour1 < hour2:
         return -1
     else:
-        if minute1>minute2:
+        if minute1 > minute2:
             return 1
-        elif minute1<minute2:
+        elif minute1 < minute2:
             return -1
         else:
             return 0
-
 
 
 def get_random_int(minimum, maximum):
@@ -504,34 +502,35 @@ def build_available_time_string(availabilities):
                                   build_time_output_string(availabilities[2]))
 
 
-def build_options(slot, speciality, doctor, date, time,psid,name,DateOfBird,PhoneNumber):
+def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, PhoneNumber):
     """
     Build a list of potential options for a given slot, to be used in responseCard generation.
     """
     day_strings = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    
-    if slot=="AccountFBMakeAppointment":
-        temp1={
+
+    if slot == "AccountFBMakeAppointment":
+        temp1 = {
             'text': "Tài khoản này",
             'value': "Tài khoản này"}
-        temp2={
+        temp2 = {
             'text': "Tài khoản khác",
             'value': "Tài khoản khác"
-            }
-        res=[]
+        }
+        res = []
         res.append(temp1)
         res.append(temp2)
         return res
     elif slot == 'Speciality':
         try:
-            connection = psycopg2.connect("dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-            #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+            connection = psycopg2.connect(
+                "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+            # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
 
             cursor = connection.cursor()
             # Print PostgreSQL Connection properties
-            print ( connection.get_dsn_parameters(),"\n")
+            print(connection.get_dsn_parameters(), "\n")
 
-             # Print PostgreSQL version
+            # Print PostgreSQL version
             cursor.execute("SELECT * FROM medical_specialities;")
             records = cursor.fetchall()
             # cnt=0
@@ -545,48 +544,50 @@ def build_options(slot, speciality, doctor, date, time,psid,name,DateOfBird,Phon
             # cnt=cnt+1
             # print(cnt)
 
-        except (Exception, psycopg2.Error) as error :
-             print ("Error while connecting to PostgreSQL", error)
+        except (Exception, psycopg2.Error) as error:
+            print("Error while connecting to PostgreSQL", error)
         finally:
-            #closing database connection.
+            # closing database connection.
             if(connection):
                 cursor.close()
                 connection.close()
                 print("PostgreSQL connection is closed")
-        res=[]
+        res = []
         for row in records:
-            temp={
-            'text': row[1],
-            'value': row[1]}
+            temp = {
+                'text': row[1],
+                'value': row[1]}
             res.append(temp)
         return res
     elif slot == 'Doctor':
         try:
-            connection = psycopg2.connect("dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-            #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+            connection = psycopg2.connect(
+                "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+            # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
 
             cursor = connection.cursor()
             # Print PostgreSQL Connection properties
-            print ( connection.get_dsn_parameters(),"\n")
+            print(connection.get_dsn_parameters(), "\n")
 
-             # Print PostgreSQL version
-            cursor.execute("SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and ms.name ILIKE '%{}%';".format(speciality))
+            # Print PostgreSQL version
+            cursor.execute(
+                "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and ms.name ILIKE '%{}%';".format(speciality))
             records = cursor.fetchall()
-        except (Exception, psycopg2.Error) as error :
-             print ("Error while connecting to PostgreSQL", error)
+        except (Exception, psycopg2.Error) as error:
+            print("Error while connecting to PostgreSQL", error)
         finally:
-            #closing database connection.
+            # closing database connection.
             if(connection):
                 cursor.close()
                 connection.close()
                 print("PostgreSQL connection is closed")
-        res=[]
-        if len(records)==0:
+        res = []
+        if len(records) == 0:
             return None
         for row in records:
-            temp={
-            'text': row[1],
-            'value': row[1]}
+            temp = {
+                'text': row[1],
+                'value': row[1]}
             res.append(temp)
         return res
     # elif slot == 'Date1':
@@ -598,7 +599,7 @@ def build_options(slot, speciality, doctor, date, time,psid,name,DateOfBird,Phon
     #         print ("hi", connection.get_dsn_parameters(),"\n")
     #         print("khoa:%s"%speciality)
     #         print("bacsi:%s"%doctor)
-        
+
     #          # Print PostgreSQL version
     #         cursor.execute("SELECT distinct wh.day FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name=%s and ms.name=%s;",(doctor,speciality))
     #         records = cursor.fetchall()
@@ -647,52 +648,54 @@ def build_options(slot, speciality, doctor, date, time,psid,name,DateOfBird,Phon
     elif slot == 'Date':
         # Return the next five weekdays.
         try:
-            connection = psycopg2.connect("dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-            #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+            connection = psycopg2.connect(
+                "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+            # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
 
             cursor = connection.cursor()
             # Print PostgreSQL Connection properties
             # print ("hi", connection.get_dsn_parameters(),"\n")
             # print("khoa:%s"%speciality)
             # print("bacsi:%s"%doctor)
-        
+
             # Print PostgreSQL version
-            cursor.execute("SELECT distinct wh.day FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name ILIKE '%{}%' and ms.name ILIKE '%{}%';".format(doctor,speciality))
+            cursor.execute("SELECT distinct wh.day FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name ILIKE '%{}%' and ms.name ILIKE '%{}%';".format(doctor, speciality))
             records = cursor.fetchall()
-            if len(records)==0:
+            if len(records) == 0:
                 return None
-        except (Exception, psycopg2.Error) as error :
-             print ("Error while connecting to PostgreSQL", error)
+        except (Exception, psycopg2.Error) as error:
+            print("Error while connecting to PostgreSQL", error)
         finally:
-            #closing database connection.
+            # closing database connection.
             if(connection):
                 cursor.close()
                 connection.close()
                 print("PostgreSQL connection is closed")
-        dict_date = {'Mon': False, 'Tue': False, 'Wed': False,'Thu':False,'Fri':False,'Sat':False,'Sun':False}
+        dict_date = {'Mon': False, 'Tue': False, 'Wed': False,
+                     'Thu': False, 'Fri': False, 'Sat': False, 'Sun': False}
         for row in records:
-            if(row[0]=='Mon'):
-                dict_date['Mon']=True
-            elif row[0]=='Tue':
-                dict_date['Tue']=True
-            elif row[0]=='Wed':
-                dict_date['Wed']=True
-            elif row[0]=='Thu':
-                dict_date['Thu']=True
-            elif row[0]=='Fri':
-                dict_date['Fri']=True
-            elif row[0]=='Sat':
-                dict_date['Sat']=True
-            elif row[0]=='Sun':
-                dict_date['Sun']=True
+            if(row[0] == 'Mon'):
+                dict_date['Mon'] = True
+            elif row[0] == 'Tue':
+                dict_date['Tue'] = True
+            elif row[0] == 'Wed':
+                dict_date['Wed'] = True
+            elif row[0] == 'Thu':
+                dict_date['Thu'] = True
+            elif row[0] == 'Fri':
+                dict_date['Fri'] = True
+            elif row[0] == 'Sat':
+                dict_date['Sat'] = True
+            elif row[0] == 'Sun':
+                dict_date['Sun'] = True
         options = []
         potential_date = datetime.date.today()
-        #potential_date.strftime('%A, %B %d, %Y')
+        # potential_date.strftime('%A, %B %d, %Y')
         while len(options) < 30:
             potential_date = potential_date + datetime.timedelta(days=1)
-            #print(potential_date.weekday())
-            if dict_date[day_strings[potential_date.weekday()]] ==True:
-                options.append({'text': '{}-{} ({})'.format(potential_date.day,potential_date.month, day_strings[potential_date.weekday()]),
+            # print(potential_date.weekday())
+            if dict_date[day_strings[potential_date.weekday()]] == True:
+                options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings[potential_date.weekday()]),
                                 'value': potential_date.strftime('%Y-%d-%m')})
         return options
     elif slot == 'Time':
@@ -712,59 +715,58 @@ def build_options(slot, speciality, doctor, date, time,psid,name,DateOfBird,Phon
         #     options.append({'text': build_time_output_string(availabilities[i]), 'value': build_time_output_string(availabilities[i])})
 
         # return options
-        value_time=[]
-        res=[]
-        a=[]
+        value_time = []
+        res = []
+        a = []
         try:
-            connection = psycopg2.connect("dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-            #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+            connection = psycopg2.connect(
+                "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+            # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
             a.append(3)
             cursor = connection.cursor()
             # Print PostgreSQL Connection properties
             # print ("hi", connection.get_dsn_parameters(),"\n")
             # print("khoa:%s"%speciality)
             # print("bacsi:%s"%doctor)
-            
+
             # try:
             #     date_weekdate=datetime.datetime.strptime(date, '%d/%m/%y').date().weekday() #ngày kiểu datetime
             # except ValueError as ve:
             #     print('ValueError Raised:', ve)
-            
-            
-          
-            
-            date_weekday=day_strings[datetime.datetime.strptime(date, '%Y-%m-%d').date().weekday()] #ngày kiểu datetime
-             # Print PostgreSQL version
-            cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name ILIKE '%{}%' and ms.name ILIKE '%{}%' and wh.day='{}'  order by wh.time;".format(doctor,speciality,date_weekday))
-            
+
+            date_weekday = day_strings[datetime.datetime.strptime(
+                date, '%Y-%m-%d').date().weekday()]  # ngày kiểu datetime
+            # Print PostgreSQL version
+            cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name ILIKE '%{}%' and ms.name ILIKE '%{}%' and wh.day='{}'  order by wh.time;".format(
+                doctor, speciality, date_weekday))
+
             records = cursor.fetchall()
-            if len(records)==0:
+            if len(records) == 0:
                 return None
             for row in records:
-                time_temp=row[0].split(' – ')
-                if(len(time_temp)!=2):
-                    time_temp=row[0].split(' - ')
-                time_begin=time_temp[0]
-                time_end=time_temp[1]
+                time_temp = row[0].split(' – ')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split(' - ')
+                time_begin = time_temp[0]
+                time_end = time_temp[1]
                 # print('time begin:---%s------'%time_begin)
                 # print('time end:----------%s----' %time_end)
-                while compare_time(time_begin,time_end)<0:
+                while compare_time(time_begin, time_end) < 0:
                     value_time.append(time_begin)
-                    time_begin=increment_time_by_thirty_mins(time_begin)
-                    #print('time begin update: %s'%time_begin)
+                    time_begin = increment_time_by_thirty_mins(time_begin)
+                    # print('time begin update: %s'%time_begin)
 
-                
             for x in value_time:
-                temp={
-                'text': build_time_output_string(x),
-                'value': build_time_output_string(x)}
+                temp = {
+                    'text': build_time_output_string(x),
+                    'value': build_time_output_string(x)}
                 res.append(temp)
             return res
-            
-        except (Exception, psycopg2.Error) as error :
-             print ("Error while connecting to PostgreSQL", error)
+
+        except (Exception, psycopg2.Error) as error:
+            print("Error while connecting to PostgreSQL", error)
         finally:
-            #closing database connection.
+            # closing database connection.
             if(connection):
                 cursor.close()
                 connection.close()
@@ -772,41 +774,47 @@ def build_options(slot, speciality, doctor, date, time,psid,name,DateOfBird,Phon
         return None
     elif slot == 'Appointment':
         try:
-            connection = psycopg2.connect("dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-            #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+            connection = psycopg2.connect(
+                "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+            # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
 
             cursor = connection.cursor()
             # Print PostgreSQL Connection properties
-            print ( connection.get_dsn_parameters(),"\n")
+            print(connection.get_dsn_parameters(), "\n")
 
-             # Print PostgreSQL version
+            # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
-                cursor.execute("SELECT * FROM appointment_schedule as a WHERE a.patient_name='{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name,DateOfBird,PhoneNumber))
+                cursor.execute(
+                    "SELECT * FROM appointment_schedule as a WHERE a.patient_name='{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name, DateOfBird, PhoneNumber))
                 records = cursor.fetchall()
             else:
-                cursor.execute("SELECT * FROM appointment_schedule as a WHERE a.psid='{}';".format(psid))
+                cursor.execute(
+                    "SELECT * FROM appointment_schedule as a WHERE a.psid='{}';".format(psid))
                 records = cursor.fetchall()
-        except (Exception, psycopg2.Error) as error :
-             print ("Error while connecting to PostgreSQL", error)
+        except (Exception, psycopg2.Error) as error:
+            print("Error while connecting to PostgreSQL", error)
         finally:
-            #closing database connection.
+            # closing database connection.
             if(connection):
                 cursor.close()
                 connection.close()
                 print("PostgreSQL connection is closed")
-        res=[]
-        if len(records)==0:
+        res = []
+        if len(records) == 0:
             return None
         for row in records:
-            #str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
-            str_value=row[1]
-            temp={
-            'text': str_value,
-            'value': str_value}
+            # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
+            str_value = row[1]
+            temp = {
+                'text': str_value,
+                'value': str_value}
             res.append(temp)
         print(res)
         return res
-       
+    elif slot == 'ChangeType':
+        res = [{'text': 'Bác sĩ', 'value': 'Bác sĩ'}, {
+            'text': 'Ngày', 'value': 'Ngày'}, {'text': 'Giờ', 'value': 'Giờ'}]
+        return res
 
 
 """ --- Functions that control the bot's behavior --- """
@@ -827,53 +835,55 @@ def update_appointment(intent_request):
     # source = intent_request['invocationSource']
     # output_session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {}
     # booking_map = json.loads(try_ex(lambda: output_session_attributes['bookingMap']) or '{}')
-    AccountFBMakeAppointment=intent_request['currentIntent']['slots']['AccountFBMakeAppointment']
-    Appointment=intent_request['currentIntent']['slots']['Appointment']
+    AccountFBMakeAppointment = intent_request['currentIntent']['slots']['AccountFBMakeAppointment']
+    Appointment = intent_request['currentIntent']['slots']['Appointment']
+    ChangeType = intent_request['currentIntent']['slots']['ChangeType']
     speciality = intent_request['currentIntent']['slots']['Speciality']
     doctor = intent_request['currentIntent']['slots']['Doctor']
     time = intent_request['currentIntent']['slots']['Time']
     date = intent_request['currentIntent']['slots']['Date']
     name = intent_request['currentIntent']['slots']['Name']
-    DateOfBird=intent_request['currentIntent']['slots']['DateOfBird']
-    PhoneNumber=intent_request['currentIntent']['slots']['PhoneNumber']
-    Confirmation=intent_request['currentIntent']['slots']['Confirmation']
+    DateOfBird = intent_request['currentIntent']['slots']['DateOfBird']
+    PhoneNumber = intent_request['currentIntent']['slots']['PhoneNumber']
+    Confirmation = intent_request['currentIntent']['slots']['Confirmation']
     source = intent_request['invocationSource']
     output_session_attributes = intent_request[
         'sessionAttributes'] if intent_request[
             'sessionAttributes'] is not None else {}
-    psid="2768186586569088"
-    #psid="2872158819534978"
+    psid = "2768186586569088"
+    # psid="2872158819534978"
     try:
-        psid=intent_request['requestAttributes']['x-amz-lex:user-id']
+        psid = intent_request['requestAttributes']['x-amz-lex:user-id']
     except Exception as error:
-        print("get psid error",error)
+        print("get psid error", error)
     finally:
         print("get psid final")
-    print("psid type:",type(psid))
-    # # api-endpoint 
-    #,profile_pic,locale,timezone,gender
-    URL = "https://graph.facebook.com/{}?fields=name,first_name,last_name&access_token=EAACtffPGBe4BAGvNefOdwJDnB8s2wZAQgNlEBJZCfxgbdZC8ktRuB3NGTIPBR47QDc5KDwa9w3osAbZAnpWQNQneMr4v4SbBauZAjgx06x1xZCZA2dSPFV1rBa1dhnkRcrSM8sgKL5ZAtM20Ww3mnD11jWYweE41x5a8HjkDISWyUFF2TyzhORj5".format(psid)
-    # r = requests.get(url = URL) 
-    # data = r.json() 
+    print("psid type:", type(psid))
+    # # api-endpoint
+    # ,profile_pic,locale,timezone,gender
+    URL = "https://graph.facebook.com/{}?fields=name,first_name,last_name&access_token=EAACtffPGBe4BAGvNefOdwJDnB8s2wZAQgNlEBJZCfxgbdZC8ktRuB3NGTIPBR47QDc5KDwa9w3osAbZAnpWQNQneMr4v4SbBauZAjgx06x1xZCZA2dSPFV1rBa1dhnkRcrSM8sgKL5ZAtM20Ww3mnD11jWYweE41x5a8HjkDISWyUFF2TyzhORj5".format(
+        psid)
+    # r = requests.get(url = URL)
+    # data = r.json()
     ###
     http = urllib3.PoolManager()
     r = http.request('GET', URL)
-    #data=r.data
-    data=json.loads(r.data.decode('utf-8'))
-  
+    # data=r.data
+    data = json.loads(r.data.decode('utf-8'))
+
     print(data)
-    # extracting latitude, longitude and formatted address  
-    # of the first matching location 
-    # latitude = data['results'][0]['geometry']['location']['lat'] 
-    # longitude = data['results'][0]['geometry']['location']['lng'] 
-    # formatted_address = data['results'][0]['formatted_address'] 
-    fb_name=data['name']
-    fb_first_name=data['first_name']
-    fb_last_name=data['last_name']
-    print('name= ',fb_name)
-  
-    # # printing the output 
-    # print("Latitude:%s\nLongitude:%s\nFormatted Address:%s"%(latitude, longitude,formatted_address)) 
+    # extracting latitude, longitude and formatted address
+    # of the first matching location
+    # latitude = data['results'][0]['geometry']['location']['lat']
+    # longitude = data['results'][0]['geometry']['location']['lng']
+    # formatted_address = data['results'][0]['formatted_address']
+    fb_name = data['name']
+    fb_first_name = data['first_name']
+    fb_last_name = data['last_name']
+    print('name= ', fb_name)
+
+    # # printing the output
+    # print("Latitude:%s\nLongitude:%s\nFormatted Address:%s"%(latitude, longitude,formatted_address))
 
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
@@ -893,32 +903,32 @@ def update_appointment(intent_request):
         #             build_options(validation_result['violatedSlot'], appointment_type, date, booking_map)
         #         )
         #     )
-        #https://graph.facebook.com/2768186586569088?fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=EAACtffPGBe4BAGvNefOdwJDnB8s2wZAQgNlEBJZCfxgbdZC8ktRuB3NGTIPBR47QDc5KDwa9w3osAbZAnpWQNQneMr4v4SbBauZAjgx06x1xZCZA2dSPFV1rBa1dhnkRcrSM8sgKL5ZAtM20Ww3mnD11jWYweE41x5a8HjkDISWyUFF2TyzhORj5
+        # https://graph.facebook.com/2768186586569088?fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=EAACtffPGBe4BAGvNefOdwJDnB8s2wZAQgNlEBJZCfxgbdZC8ktRuB3NGTIPBR47QDc5KDwa9w3osAbZAnpWQNQneMr4v4SbBauZAjgx06x1xZCZA2dSPFV1rBa1dhnkRcrSM8sgKL5ZAtM20Ww3mnD11jWYweE41x5a8HjkDISWyUFF2TyzhORj5
         # if Appointment and (not name or not DateOfBird or not PhoneNumber):
         #     return delegate(output_session_attributes, slots)
         if not AccountFBMakeAppointment:
             return elicit_slot(
-                    output_session_attributes,
-                    intent_request['currentIntent']['name'],
-                    intent_request['currentIntent']['slots'], 
-                    'AccountFBMakeAppointment', 
-                    {
-                        'contentType': 'PlainText',
-                        'content': 'Chào {}! Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'.format(fb_first_name)
-                    },
-                    build_response_card(
-                            'Tài khoản Facebook đã dùng để đặt lịch',
-                            'Mời bạn chọn loại tài khoản',
-                            build_options('AccountFBMakeAppointment', None,None,None,None,psid,None,None,None)))
+                output_session_attributes,
+                intent_request['currentIntent']['name'],
+                intent_request['currentIntent']['slots'],
+                'AccountFBMakeAppointment',
+                {
+                    'contentType': 'PlainText',
+                    'content': 'Chào {}! Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'.format(fb_first_name)
+                },
+                build_response_card(
+                    'Tài khoản Facebook đã dùng để đặt lịch',
+                    'Mời bạn chọn loại tài khoản',
+                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None)))
         elif not Appointment:
-            if AccountFBMakeAppointment=="Tài khoản này":
-                if build_options('Appointment', None,None,None,None,psid,None,None,None)==None:
-                    slots['AccountFBMakeAppointment']="Tài khoản khác"
+            if AccountFBMakeAppointment == "Tài khoản này":
+                if build_options('Appointment', None, None, None, None, psid, None, None, None) == None:
+                    slots['AccountFBMakeAppointment'] = "Tài khoản khác"
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
-                        intent_request['currentIntent']['slots'], 
-                        'Name', 
+                        intent_request['currentIntent']['slots'],
+                        'Name',
                         {
                             'contentType': 'PlainText',
                             'content': 'Tài khoản này chưa đặt lịch hẹn nào. Để cập nhật lịch hẹn tôi cần được biết tên của bệnh nhân'
@@ -935,14 +945,14 @@ def update_appointment(intent_request):
                         build_response_card(
                             'Bạn có các lịch hẹn với các bác sĩ sau đây',
                             'Mời bạn chọn lịch hẹn muốn được cập nhật',
-                            build_options('Appointment', None,None,None,None,psid,None,None,None)))
-            if AccountFBMakeAppointment=="Tài khoản khác":
+                            build_options('Appointment', None, None, None, None, psid, None, None, None)))
+            if AccountFBMakeAppointment == "Tài khoản khác":
                 if not name:
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
-                        intent_request['currentIntent']['slots'], 
-                        'Name', 
+                        intent_request['currentIntent']['slots'],
+                        'Name',
                         {
                             'contentType': 'PlainText',
                             'content': 'Tên của bệnh nhân là gì ạ?'
@@ -952,8 +962,8 @@ def update_appointment(intent_request):
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
-                        intent_request['currentIntent']['slots'], 
-                        'DateOfBird', 
+                        intent_request['currentIntent']['slots'],
+                        'DateOfBird',
                         {
                             'contentType': 'PlainText',
                             'content': 'Bệnh nhân {} sinh ngày bao nhiêu ạ?'.format(name)
@@ -962,33 +972,33 @@ def update_appointment(intent_request):
                 if not PhoneNumber:
                     # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
                     print(intent_request['currentIntent']['slots'])
-                    arr_date=DateOfBird.split('-')
-                    if int(arr_date[2])<13:
-                        arr_date[1], arr_date[2]=arr_date[2],arr_date[1]
-                    DateOfBird=arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
-                    slots['DateOfBird']=DateOfBird
+                    arr_date = DateOfBird.split('-')
+                    if int(arr_date[2]) < 13:
+                        arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
+                    DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
+                    slots['DateOfBird'] = DateOfBird
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
                         intent_request['currentIntent']['slots'], 'PhoneNumber', {
                             'contentType': 'PlainText',
                             'content': 'Số điện thoại đã đặt lịch hẹn là gì ạ?'
-                        },None)
-                if build_options('Appointment', None,None,None,None,psid,name,DateOfBird,PhoneNumber)==None:
-                    name_temp=name
-                    DateOfBird_temp=DateOfBird
-                    PhoneNumber_temp=PhoneNumber
-                    slots['Name']=None
-                    slots['DateOfBird']=None
-                    slots['PhoneNumber']=None
+                        }, None)
+                if build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber) == None:
+                    name_temp = name
+                    DateOfBird_temp = DateOfBird
+                    PhoneNumber_temp = PhoneNumber
+                    slots['Name'] = None
+                    slots['DateOfBird'] = None
+                    slots['PhoneNumber'] = None
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
-                        intent_request['currentIntent']['slots'], 
-                        'Name', 
+                        intent_request['currentIntent']['slots'],
+                        'Name',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Tên bệnh nhân là gì?.'.format(name,DateOfBird,PhoneNumber)
+                            'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Tên bệnh nhân là gì?.'.format(name, DateOfBird, PhoneNumber)
                         },
                         None)
                 else:
@@ -1000,16 +1010,17 @@ def update_appointment(intent_request):
                             'content': 'Không biết bạn muốn thay đổi lịch hẹn với bác sĩ nào ạ?'
                         },
                         build_response_card(
-                            'Bệnh nhân {} có lịch hẹn với các bác sĩ sau:'.format(name),
+                            'Bệnh nhân {} có lịch hẹn với các bác sĩ sau:'.format(
+                                name),
                             'Mời bạn chọn lịch hẹn muốn được cập nhật',
-                            build_options('Appointment', None,None,None,None,psid,name,DateOfBird,PhoneNumber)))
+                            build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber)))
         # elif AccountFBMakeAppointment=="Tài khoản khác"and (not name or not DateOfBird or not PhoneNumber):
         #     if not name:
         #         return elicit_slot(
         #             output_session_attributes,
         #             intent_request['currentIntent']['name'],
-        #             intent_request['currentIntent']['slots'], 
-        #             'Name', 
+        #             intent_request['currentIntent']['slots'],
+        #             'Name',
         #             {
         #                 'contentType': 'PlainText',
         #                 'content': 'Tên của bệnh nhân là gì ạ?'
@@ -1019,8 +1030,8 @@ def update_appointment(intent_request):
         #         return elicit_slot(
         #             output_session_attributes,
         #             intent_request['currentIntent']['name'],
-        #             intent_request['currentIntent']['slots'], 
-        #             'DateOfBird', 
+        #             intent_request['currentIntent']['slots'],
+        #             'DateOfBird',
         #             {
         #                 'contentType': 'PlainText',
         #                 'content': 'Tôi cần biết ngày sinh của bệnh nhân'
@@ -1030,142 +1041,175 @@ def update_appointment(intent_request):
         #         return elicit_slot(
         #             output_session_attributes,
         #             intent_request['currentIntent']['name'],
-        #             intent_request['currentIntent']['slots'], 
-        #             'PhoneNumber', 
+        #             intent_request['currentIntent']['slots'],
+        #             'PhoneNumber',
         #             {
         #                 'contentType': 'PlainText',
         #                 'content': 'Cho tôi xin số điện thoại đã đặt lịch hẹn.'
         #             },
         #             None)
-        elif not speciality:
+        elif not ChangeType:
             return elicit_slot(
                 output_session_attributes,
                 intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Speciality', {
+                slots, 'ChangeType', {
                     'contentType': 'PlainText',
-                    'content': 'Để thay đổi lịch hẹn với bác sĩ {}. Mời bạn chọn khoa hiện tại bạn muốn khám'.format(Appointment)
+                    'content': 'Bạn muốn cập nhật thông tin nào ạ?'
                 },
                 build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn khoa mình muốn khám',
-                    build_options('Speciality', None,None,None,None,psid,None,None,None)))
+                    'Danh mục muốn thay đổi:',
+                    'Mời bạn chọn thông tin cần thay đổi',
+                    build_options('ChangeType', None, None, None, None, psid, None, None, None)))
+        elif not speciality and not doctor and not date and not time:
+            try:
+                connection = psycopg2.connect(
+                    "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+                # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+                cursor = connection.cursor()
+                if AccountFBMakeAppointment == "Tài khoản khác":
+                    query = """Select speciality,doctor,date,time From appointment_schedule where doctor = %s and patient_name = %s and date_of_birth=%s and phone_number=%s"""
+                    cursor.execute(
+                        query, (Appointment, name, DateOfBird, PhoneNumber))
+                else:
+                    query = """Select * From appointment_schedule where doctor = %s and psid=%s"""
+                    cursor.execute(query, (Appointment, psid))
+                records = cursor.fetchall()
+            except (Exception, psycopg2.Error) as error:
+                print("Error while connecting to PostgreSQL", error)
+            finally:
+                # closing database connection.
+                if(connection):
+                    cursor.close()
+                    connection.close()
+                    print("PostgreSQL connection is closed")
+            if ChangeType == 'Bác sĩ':
+                slots['Speciality'] = records[0][0]
+            elif ChangeType == 'Ngày':
+                slots['Speciality'] = records[0][0]
+                slots['Doctor'] = records[0][1]
+            elif ChangeType == 'Giờ':
+                slots['Speciality'] = records[0][0]
+                slots['Doctor'] = records[0][1]
+                slots['Date'] = records[0][2]
         elif not doctor:
-            if build_options('Doctor', speciality,None,None,None,psid,None,None,None)==None:
-                slots['Speciality']=None
+            if build_options('Doctor', speciality, None, None, None, psid, None, None, None) == None:
+                slots['Speciality'] = None
                 return elicit_slot(
-                output_session_attributes,
-                intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Speciality', {
-                    'contentType': 'PlainText',
-                    'content': 'Bạn có thể cho tôi biết bạn muốn tới khoa nào khám bệnh không?'
-                },
-                build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn khoa mình muốn khám',
-                    build_options('Speciality', None,None,None,None,psid,None,None,None)))
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Speciality', {
+                        'contentType': 'PlainText',
+                        'content': 'Bạn có thể cho tôi biết bạn muốn tới khoa nào khám bệnh không?'
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn khoa mình muốn khám',
+                        build_options('Speciality', None, None, None, None, psid, None, None, None)))
             else:
                 return elicit_slot(
-                output_session_attributes,
-                intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Doctor', {
-                    'contentType': 'PlainText',
-                    'content': 'Bạn muốn khám với bác sĩ nào?'
-                },
-                build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn bác sĩ của khoa{}'.format(speciality),
-                    build_options('Doctor', speciality,None,None,None,psid,None,None,None)))
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Doctor', {
+                        'contentType': 'PlainText',
+                        'content': 'Bạn muốn khám với bác sĩ nào?'
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn bác sĩ của khoa{}'.format(speciality),
+                        build_options('Doctor', speciality, None, None, None, psid, None, None, None)))
         elif not date:
-            if build_options('Date', speciality,doctor,None,None,psid,None,None,None)==None:
-                slots['Doctor']=None
+            if build_options('Date', speciality, doctor, None, None, psid, None, None, None) == None:
+                slots['Doctor'] = None
                 return elicit_slot(
-                output_session_attributes,
-                intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Doctor', {
-                    'contentType': 'PlainText',
-                    'content': 'Hãy chọn bác sĩ mà bạn muốn hẹn'
-                },
-                build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn bác sĩ',
-                    build_options('Doctor', speciality,None,None,None,psid,None,None,None)))
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Doctor', {
+                        'contentType': 'PlainText',
+                        'content': 'Hãy chọn bác sĩ mà bạn muốn hẹn'
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn bác sĩ',
+                        build_options('Doctor', speciality, None, None, None, psid, None, None, None)))
             else:
                 return elicit_slot(
-                output_session_attributes,
-                intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Date', 
-                {
-                    'contentType': 'PlainText',
-                    'content': 'Không biết bạn có thể gặp bác sĩ {} vào ngày nào ạ?'.format(doctor)
-                },
-                build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn ngày khám bệnh',
-                    build_options('Date', speciality,doctor,None,None,psid,None,None,None)))
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Date',
+                    {
+                        'contentType': 'PlainText',
+                        'content': 'Không biết bạn có thể gặp bác sĩ {} vào ngày nào ạ?'.format(doctor)
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn ngày khám bệnh',
+                        build_options('Date', speciality, doctor, None, None, psid, None, None, None)))
         elif not time:
             # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
-            print(intent_request['currentIntent']['slots'])
-            arr_date=date.split('-')
-            if int(arr_date[2])<13:
-                arr_date[1], arr_date[2]=arr_date[2],arr_date[1]
-            date=arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
+            print(slots)
+            arr_date = date.split('-')
+            if int(arr_date[2]) < 13:
+                arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
+            date = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
             today = datetime.date.today()
-            #fix bug loi format 4/5/2020->4/5/2021
-            print('today:',today)
-            if int(arr_date[0])==today.year+1:
+            # fix bug loi format 4/5/2020->4/5/2021
+            print('today:', today)
+            if int(arr_date[0]) == today.year+1:
                 print(today.year+1)
-                if today.month<int(arr_date[1]) or (today.month==int(arr_date[1]) and today.day<int(arr_date[2])):
-                    arr_date[0]=str(today.year)
-            date=arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
-            print('date',date)
+                if today.month < int(arr_date[1]) or (today.month == int(arr_date[1]) and today.day < int(arr_date[2])):
+                    arr_date[0] = str(today.year)
+            date = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
+            print('date', date)
 
-
-            date_display=arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
-            slots['Date']=date
-            print("date nek",date)
-            if build_options('Time', speciality,doctor,date,None,psid,None,None,None)==None:
-                slots['Date']=None
+            date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
+            slots['Date'] = date
+            print("date nek", date)
+            if build_options('Time', speciality, doctor, date, None, psid, None, None, None) == None:
+                slots['Date'] = None
                 return elicit_slot(
-                output_session_attributes,
-                intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Date', {
-                    'contentType': 'PlainText',
-                    'content': 'Bạn muốn đặt lịch hẹn vào ngày mấy ạ?'
-                },
-                build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn ngày khám bệnh',
-                    build_options('Date', speciality,doctor,None,None,psid,None,None,None)))
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Date', {
+                        'contentType': 'PlainText',
+                        'content': 'Bạn muốn đặt lịch hẹn vào ngày mấy ạ?'
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn ngày khám bệnh',
+                        build_options('Date', speciality, doctor, None, None, psid, None, None, None)))
             else:
                 return elicit_slot(
-                output_session_attributes,
-                intent_request['currentIntent']['name'],
-                intent_request['currentIntent']['slots'], 'Time', {
-                    'contentType': 'PlainText',
-                    'content': 'Bạn có thể gặp bác sĩ vào lúc nào trong ngày {}'.format(date_display)
-                },
-                build_response_card(
-                    'Cập nhật lịch hẹn',
-                    'Mời bạn chọn thời gian hẹn bác sĩ',
-                    build_options('Time', speciality,doctor,date,None,psid,None,None,None)))
-        elif Confirmation=="Có":
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Time', {
+                        'contentType': 'PlainText',
+                        'content': 'Bạn có thể gặp bác sĩ vào lúc nào trong ngày {}'.format(date_display)
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn thời gian hẹn bác sĩ',
+                        build_options('Time', speciality, doctor, date, None, psid, None, None, None)))
+        elif Confirmation == "Có":
             try:
-                connection = psycopg2.connect("dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-                #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+                connection = psycopg2.connect(
+                    "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+                # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
 
                 cursor = connection.cursor()
-                if AccountFBMakeAppointment=="Tài khoản khác":
-                    sql_update_query = """Update appointment_schedule set doctor = %s , speciality=%s , date=%s , time=%s where patient_name = %s and date_of_birth=%s and phone_number=%s"""
-                    cursor.execute(sql_update_query, (doctor, speciality,date,time,name,DateOfBird,PhoneNumber))
+                if AccountFBMakeAppointment == "Tài khoản khác":
+                    sql_update_query = """Update appointment_schedule set doctor = %s , speciality=%s , date=%s , time=%s where doctor = %s and patient_name = %s and date_of_birth=%s and phone_number=%s"""
+                    cursor.execute(sql_update_query, (doctor, speciality,
+                                                      date, time, Appointment, name, DateOfBird, PhoneNumber))
                 else:
                     sql_update_query = """Update appointment_schedule set doctor = %s , speciality=%s , date=%s , time=%s where doctor = %s and psid=%s"""
-                    cursor.execute(sql_update_query, (doctor, speciality,date,time,Appointment,psid))
+                    cursor.execute(sql_update_query, (doctor,
+                                                      speciality, date, time, Appointment, psid))
                 # sql_update_query = """Update appointment_schedule set date=%s , time=%s where patient_name = %s and date_of_birth=%s and phone_number=%s"""
                 # cursor.execute(sql_update_query, (date,time,name,DateOfBird,PhoneNumber))
                 connection.commit()
                 count = cursor.rowcount
 
-                if count==0:
+                if count == 0:
                     return close2(
                         output_session_attributes,
                         'Fulfilled',
@@ -1173,13 +1217,13 @@ def update_appointment(intent_request):
                             'contentType': 'PlainText',
                             'content': 'Thông tin lịch hẹn trên không tồn tại. Cập nhật lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
                         }
-                    )            
-            
+                    )
+
                 print(count, "Record Updated successfully ")
-            except (Exception, psycopg2.Error) as error :
-                print ("Error while connecting to PostgreSQL", error)
+            except (Exception, psycopg2.Error) as error:
+                print("Error while connecting to PostgreSQL", error)
             finally:
-                #closing database connection.
+                # closing database connection.
                 if(connection):
                     cursor.close()
                     connection.close()
@@ -1188,7 +1232,7 @@ def update_appointment(intent_request):
                 output_session_attributes,
                 slots
             )
-        elif Confirmation=="Không":
+        elif Confirmation == "Không":
             return close2(
                 output_session_attributes,
                 'Fulfilled',
@@ -1281,7 +1325,7 @@ def update_appointment(intent_request):
 
         return delegate(output_session_attributes, slots)
 
-    ## Book the appointment.  In a real bot, this would likely involve a call to a backend service.
+    # Book the appointment.  In a real bot, this would likely involve a call to a backend service.
     # duration = get_duration(appointment_type)
     # booking_availabilities = booking_map[date]
     # if booking_availabilities:
@@ -1303,7 +1347,7 @@ def update_appointment(intent_request):
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của khoa {} vào lúc {} ngày {}'.format(name,DateOfBird,PhoneNumber, doctor,speciality, time, date)
+            'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của khoa {} vào lúc {} ngày {}'.format(name, DateOfBird, PhoneNumber, doctor, speciality, time, date)
         }
     )
 
@@ -1324,7 +1368,7 @@ def dispatch(intent_request):
     # Dispatch to your bot's intent handlers
     if intent_name == 'VietnameseUpdateAppointment':
         return update_appointment(intent_request)
-    
+
     raise Exception('Intent with name ' + intent_name + ' not supported')
 
 
@@ -1337,11 +1381,13 @@ def lambda_handler(event, context):
     The JSON body of the request is provided in the event slot.
     """
     # By default, treat the user request as coming from the America/New_York time zone.
-    #Asia/Jakarta
+    # Asia/Jakarta
     os.environ['TZ'] = 'Asia/Jakarta'
     time.tzset()
     logger.debug('event.bot.name={}'.format(event['bot']['name']))
 
     return dispatch(event)
+
+
 update_appointment(xxx)
 # SELECT * FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name='Dr Do Thanh Long' and ms.name='Cardiology'

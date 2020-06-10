@@ -1074,67 +1074,47 @@ def make_appointment(intent_request):
             slots['Date'] = date
             slots['FormattedDate'] = '1'
             # end fix bug
-        if UpdateSlot == 'Bác Sĩ':
-            slots['Doctor'] = None
-            doctor = None
-            slots['UpdateSlot'] = None
-            UpdateSlot = None
-        elif UpdateSlot == 'Khoa':
-            slots['Speciality'] = None
-            speciality = None
-            slots['UpdateSlot'] = None
-            UpdateSlot = None
-        elif UpdateSlot == 'Ngày':
-            slots['Date'] = None
-            date = None
-            slots['UpdateSlot'] = None
-            UpdateSlot = None
-        elif UpdateSlot == 'Giờ':
-            slots['Time'] = None
-            time = None
-            slots['UpdateSlot'] = None
-            UpdateSlot = None
-        # if doctor and date and time:
-        #     arr_date = date.split('-')
-        #     date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
-        #     # nếu lịch không hợp lệ và slottype = null thì hỏi người dùng cần chỉnh UpdateSlot nào. nếu lịch không hợp lệ và slottype khác null thì set slot đang xét về null
-        #     # nếu hợp lệ thì set slottype hiện tại bằng null
-        #     valid = valid_appointment(doctor, speciality, date, time)
-        #     if valid == False:  # cần sửa
-        #         if not UpdateSlot:
-        #             if speciality:
-        #                 message = 'Hiện tại bác sĩ {} của {} không rảnh vào {} ngày {}'.format(
-        #                     doctor, speciality, time, date_display)
-        #             else:
-        #                 message = 'Hiện tại bác sĩ {} không rảnh vào {} ngày {}'.format(
-        #                     doctor, time, date_display)
-        #             return elicit_slot(
-        #                 output_session_attributes,
-        #                 intent_request['currentIntent']['name'],
-        #                 slots, 'UpdateSlot', {
-        #                     'contentType': 'PlainText',
-        #                     'content': message
-        #                 },
-        #                 build_response_card(
-        #                     'Để đặt được lịch bạn cần thay đổi 1 yếu tố',
-        #                     'Bạn muốn thay đổi yếu tố nào?',
-        #                     build_options('UpdateSlot', speciality, doctor, date, time, None)))
-        #         else:
-        #             if UpdateSlot == 'Bác Sĩ':
-        #                 slots['Doctor'] = None
-        #                 doctor = None
-        #             elif UpdateSlot == 'Khoa':
-        #                 slots['Speciality'] = None
-        #                 speciality = None
-        #             elif UpdateSlot == 'Ngày':
-        #                 slots['Date'] = None
-        #                 date = None
-        #             elif UpdateSlot == 'Giờ':
-        #                 slots['Time'] = None
-        #                 time = None
-        #     else:
-        #         slots['UpdateSlot'] = None
-        #         UpdateSlot = None
+        if doctor and date and time:
+            arr_date = date.split('-')
+            date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
+            # nếu lịch không hợp lệ và slottype = null thì hỏi người dùng cần chỉnh slot nào. nếu lịch không hợp lệ và slottype khác null thì set slot đang xét về null
+            # nếu hợp lệ thì set slottype hiện tại bằng null
+            valid = valid_appointment(doctor, speciality, date, time)
+            if valid == False:  # cần sửa
+                if not UpdateSlot:
+                    if speciality:
+                        message = 'Hiện tại bác sĩ {} của {} không rảnh vào {} ngày {}'.format(
+                            doctor, speciality, time, date_display)
+                    else:
+                        message = 'Hiện tại bác sĩ {} không rảnh vào {} ngày {}'.format(
+                            doctor, time, date_display)
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'UpdateSlot', {
+                            'contentType': 'PlainText',
+                            'content': message
+                        },
+                        build_response_card(
+                            'Để đặt được lịch bạn cần thay đổi 1 yếu tố',
+                            'Bạn muốn thay đổi yếu tố nào?',
+                            build_options('UpdateSlot', speciality, doctor, date, time, None)))
+                else:
+                    if UpdateSlot == 'Bác Sĩ':
+                        slots['Doctor'] = None
+                        doctor = None
+                    elif UpdateSlot == 'Khoa':
+                        slots['Speciality'] = None
+                        speciality = None
+                    elif UpdateSlot == 'Ngày':
+                        slots['Date'] = None
+                        date = None
+                    elif UpdateSlot == 'Giờ':
+                        slots['Time'] = None
+                        time = None
+            else:
+                slots['UpdateSlot'] = None
+                UpdateSlot = None
 
         # không bác sĩ và không khoa
         if not speciality and not doctor:
@@ -1355,34 +1335,6 @@ def make_appointment(intent_request):
                             options))
             elif not name:
                 print('hello1')
-                # if doctor and date and time:
-                arr_date = date.split('-')
-                date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
-                # nếu lịch không hợp lệ và slottype = null thì hỏi người dùng cần chỉnh UpdateSlot nào. nếu lịch không hợp lệ và slottype khác null thì set slot đang xét về null
-                # nếu hợp lệ thì set slottype hiện tại bằng null
-                valid = valid_appointment(doctor, speciality, date, time)
-                if valid == False:  # cần sửa
-                    if not UpdateSlot:
-                        if speciality:
-                            message = 'Hiện tại bác sĩ {} của {} không rảnh vào {} ngày {}'.format(
-                                doctor, speciality, time, date_display)
-                        else:
-                            message = 'Hiện tại bác sĩ {} không rảnh vào {} ngày {}'.format(
-                                doctor, time, date_display)
-                        return elicit_slot(
-                            output_session_attributes,
-                            intent_request['currentIntent']['name'],
-                            slots, 'UpdateSlot', {
-                                'contentType': 'PlainText',
-                                'content': message
-                            },
-                            build_response_card(
-                                'Để đặt được lịch bạn cần thay đổi 1 yếu tố',
-                                'Bạn muốn thay đổi yếu tố nào?',
-                                build_options('UpdateSlot', speciality, doctor, date, time, None)))
-                else:
-                    slots['UpdateSlot'] = None
-                    UpdateSlot = None
                 options = build_options(
                     'name', speciality, doctor, date, time, psid)
                 if len(options) > 1:
@@ -1663,5 +1615,5 @@ def lambda_handler(event, context):
     return dispatch(event)
 
 
-make_appointment(xxx)
+# make_appointment(xxx)
 # SELECT * FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name='Dr Do Thanh Long' and ms.name='Cardiology'

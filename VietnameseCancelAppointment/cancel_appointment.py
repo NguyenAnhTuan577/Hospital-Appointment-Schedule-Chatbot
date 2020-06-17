@@ -779,11 +779,11 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
                 cursor.execute(
-                    "SELECT * FROM appointment_schedule as a WHERE a.patient_name='{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name, DateOfBird, PhoneNumber))
+                    "SELECT a.doctor,a.date FROM appointment_schedule as a WHERE a.patient_name='{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name, DateOfBird, PhoneNumber))
                 records = cursor.fetchall()
             else:
                 cursor.execute(
-                    "SELECT * FROM appointment_schedule as a WHERE a.psid='{}';".format(psid))
+                    "SELECT a.doctor,a.date FROM appointment_schedule as a WHERE a.psid='{}';".format(psid))
                 records = cursor.fetchall()
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
@@ -797,12 +797,14 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         if len(records) == 0:
             return None
         for row in records:
-            #str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
-            str_value = row[1]
-            temp = {
-                'text': str_value,
-                'value': str_value}
-            res.append(temp)
+            # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
+            str_value = row[0]
+            date_of_appointment = row[1]
+            if date_of_appointment >= datetime.date.today():
+                temp = {
+                    'text': str_value,
+                    'value': str_value}
+                res.append(temp)
         print(res)
         return res
 

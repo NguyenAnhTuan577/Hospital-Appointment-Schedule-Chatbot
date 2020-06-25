@@ -53,16 +53,16 @@ xxx = {
     "currentIntent": {
         "name": "VietnameseUpdateAppointment",
         "slots": {
-            "AccountFBMakeAppointment": "Tài khoản khác",
-            "Appointment": None,
-            "ChangeType": None,
+            "AccountFBMakeAppointment": "Tài khoản này",
+            "Appointment": "Hồ Xuân Anh",
+            "ChangeType": "Bác sĩ",
             "Confirmation": None,
             "Date": None,
-            "DateOfBird": "1998-03-03",
-            "Doctor": None,
-            "Name": "Nguyễn Văn An",
-            "PhoneNumber": "0399416956",
-            "Speciality": None,
+            "DateOfBird": None,
+            "Doctor": "Nguyễn Vân Anh",
+            "Name": None,
+            "PhoneNumber": None,
+            "Speciality": "Khoa Nhi và Nhi sơ sinh",
             "Time": None
         }
     },
@@ -571,8 +571,17 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             print(connection.get_dsn_parameters(), "\n")
 
             # Print PostgreSQL version
-            cursor.execute(
-                "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and ms.name ILIKE '%{}%';".format(speciality))
+            if speciality:
+                if not doctor:
+                    cursor.execute(
+                        "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and ms.name = '{}';".format(speciality))
+                else:
+                    cursor.execute(
+                        "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and ms.name = '{}' and d.name ILIKE '%{}';".format(speciality, doctor))
+            else:
+                if doctor:
+                    cursor.execute(
+                        "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and d.name ILIKE '%{}';".format(doctor))
             records = cursor.fetchall()
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
@@ -722,7 +731,7 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         try:
             connection = psycopg2.connect(
                 "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-            # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+            #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
             a.append(3)
             cursor = connection.cursor()
             # Print PostgreSQL Connection properties
@@ -738,12 +747,17 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             date_weekday = day_strings[datetime.datetime.strptime(
                 date, '%Y-%m-%d').date().weekday()]  # ngày kiểu datetime
             # Print PostgreSQL version
-            cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name ILIKE '%{}%' and ms.name ILIKE '%{}%' and wh.day='{}'  order by wh.time;".format(
-                doctor, speciality, date_weekday))
+            if speciality:
+                cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name = '{}' and ms.name = '{}' and wh.day='{}'  order by wh.time;".format(
+                    doctor, speciality, date_weekday))
+            else:
+                cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name = '{}'  and wh.day='{}'  order by wh.time;".format(
+                    doctor, date_weekday))
 
             records = cursor.fetchall()
             if len(records) == 0:
                 return None
+            # print(len(records))
             for row in records:
                 time_temp = row[0].split(' – ')
                 if(len(time_temp) != 2):
@@ -753,10 +767,26 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 # print('time begin:---%s------'%time_begin)
                 # print('time end:----------%s----' %time_end)
                 while compare_time(time_begin, time_end) < 0:
-                    value_time.append(time_begin)
-                    time_begin = increment_time_by_thirty_mins(time_begin)
-                    # print('time begin update: %s'%time_begin)
+                    # xxxxxxxxxxxxxxxx
+                    try:
 
+                        if speciality:
+                            cursor.execute("SELECT * FROM appointment_schedule as a where a.doctor = '{}' and a.speciality = '{}' and a.date='{}' and a.time='{}';".format(
+                                doctor, speciality, date, time_begin))
+                        else:
+                            cursor.execute("SELECT * FROM appointment_schedule as a where a.doctor = '{}'  and a.date='{}' and a.time='{}';".format(
+                                doctor, date, time_begin))
+                        records2 = cursor.fetchall()
+                        # nếu lịch hẹn này chưa được đặt trong hệ thống thì xuất 1 button lịch này ra màn hình
+                        #print('records2:', records2)
+                        if len(records2) == 0:
+                            value_time.append(time_begin)
+                    except (Exception, psycopg2.Error) as error:
+                        print("Error while connecting to PostgreSQL", error)
+                    time_begin = increment_time_by_thirty_mins(time_begin)
+                    #print('time begin update: %s' % time_begin)
+                # print('***************************************')
+            # print('end')
             for x in value_time:
                 temp = {
                     'text': build_time_output_string(x),
@@ -801,6 +831,7 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 connection.close()
                 print("PostgreSQL connection is closed")
         res = []
+        set_doctor = set()
         if len(records) == 0:
             return None
         for row in records:
@@ -808,10 +839,12 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             str_value = row[0]
             date_of_appointment = row[1]
             if date_of_appointment >= datetime.date.today():
-                temp = {
-                    'text': str_value,
-                    'value': str_value}
-                res.append(temp)
+                set_doctor.add(str_value)
+        for i in set_doctor:
+            temp = ({
+                    'text': i,
+                    'value': i})
+            res.append(temp)
         print(res)
         return res
     elif slot == 'ChangeType':
@@ -909,6 +942,27 @@ def update_appointment(intent_request):
         # https://graph.facebook.com/2768186586569088?fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=EAACtffPGBe4BAGvNefOdwJDnB8s2wZAQgNlEBJZCfxgbdZC8ktRuB3NGTIPBR47QDc5KDwa9w3osAbZAnpWQNQneMr4v4SbBauZAjgx06x1xZCZA2dSPFV1rBa1dhnkRcrSM8sgKL5ZAtM20Ww3mnD11jWYweE41x5a8HjkDISWyUFF2TyzhORj5
         # if Appointment and (not name or not DateOfBird or not PhoneNumber):
         #     return delegate(output_session_attributes, slots)
+        if time:
+            arr_time = time.split(':')
+            if arr_time[1] != '00' and arr_time[1] != '30':
+                hour = int(arr_time[0])
+                minute = int(arr_time[1])
+                if minute > 0 and minute < 30:
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'Time', {
+                            'contentType': 'PlainText',
+                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '00', hour, '30')
+                        }, None)
+                elif minute > 30:
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'Time', {
+                            'contentType': 'PlainText',
+                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '30', hour+1, '00')
+                        }, None)
         if not AccountFBMakeAppointment:
             return elicit_slot(
                 output_session_attributes,
@@ -1128,7 +1182,88 @@ def update_appointment(intent_request):
                         'Cập nhật lịch hẹn',
                         'Mời bạn chọn bác sĩ của {}'.format(speciality),
                         build_options('Doctor', speciality, None, None, None, psid, None, None, None)))
-        elif not date:
+        # có bác sĩ
+        else:
+            element_of_name = doctor.split(' ')
+            if len(element_of_name) == 1:
+                try:
+                    connection = psycopg2.connect(
+                        "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+                    #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+                    cursor = connection.cursor()
+                    # Print PostgreSQL Connection properties
+                    print(connection.get_dsn_parameters(), "\n")
+                    if not speciality:
+                        cursor.execute(
+                            "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and  d.name ILIKE '% {}';".format(doctor))
+                        message = 'Có nhiều bác sĩ tên {}, bạn muốn khám với bác sĩ nào ạ?'.format(
+                            doctor)
+                    else:
+                        cursor.execute(
+                            "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and ms.name = '{}' and d.name ILIKE '% {}';".format(speciality, doctor))
+                        message = 'Có nhiều bác sĩ tên {} tại {}, bạn muốn khám với bác sĩ nào ạ?'.format(
+                            doctor, speciality)
+                    records = cursor.fetchall()
+                    if len(records) == 1:
+                        doctor = records[0][1]
+                        slots['Doctor'] = doctor
+                    elif len(records) > 1:
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'Doctor', {
+                                'contentType': 'PlainText',
+                                'content': message
+                            },
+                            build_response_card(
+                                'Các bác sĩ tên {} của khoa'.format(doctor),
+                                'Mời bạn chọn họ và tên đầy đủ của bác sĩ',
+                                build_options('Doctor', speciality, doctor, date, time, None, None, None, None)))
+                except (Exception, psycopg2.Error) as error:
+                    print("Error while connecting to PostgreSQL", error)
+                finally:
+                    # closing database connection.
+                    if(connection):
+                        cursor.close()
+                        connection.close()
+                        print("PostgreSQL connection is closed")
+            elif len(element_of_name) > 1:
+                # có bác sĩ nhưng không có khoa
+                if not speciality:
+                    try:
+                        connection = psycopg2.connect(
+                            "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+                        #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+                        cursor = connection.cursor()
+                        # Print PostgreSQL Connection properties
+                        print(connection.get_dsn_parameters(), "\n")
+                        cursor.execute(
+                            "SELECT ms.name FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and d.name = '{}';".format(doctor))
+                        records = cursor.fetchall()
+                        if len(records) == 1:
+                            speciality = records[0][0]
+                            slots['Speciality'] = speciality
+                        elif len(records) > 1:
+                            return elicit_slot(
+                                output_session_attributes,
+                                intent_request['currentIntent']['name'],
+                                slots, 'Speciality', {
+                                    'contentType': 'PlainText',
+                                    'content': 'Có nhiều khoa có bác sĩ tên {}, bạn muốn khám với khoa nào ạ?'.format(doctor)
+                                },
+                                build_response_card(
+                                    'Các khoa có bác sĩ tên {}'.format(doctor),
+                                    'Mời bạn chọn khoa',
+                                    build_options('Speciality', speciality, doctor, date, time, None, None, None, None)))
+                    except (Exception, psycopg2.Error) as error:
+                        print("Error while connecting to PostgreSQL", error)
+                    finally:
+                        # closing database connection.
+                        if(connection):
+                            cursor.close()
+                            connection.close()
+                            print("PostgreSQL connection is closed")
+        if not date:
             if build_options('Date', speciality, doctor, None, None, psid, None, None, None) == None:
                 slots['Doctor'] = None
                 return elicit_slot(

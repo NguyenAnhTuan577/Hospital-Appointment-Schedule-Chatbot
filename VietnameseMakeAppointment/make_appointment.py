@@ -52,16 +52,16 @@ xxx = {
         "name": "VietnameseMakeAppointment",
         "slots": {
             "Confirmation": None,
-            "Date": "2020-05-22",
-            "DateOfBird": "1987-03-03",
+            "Date": "2020-07-09",
+            "DateOfBird": "1998-01-01",
             "DiseaseOne": None,
             "DiseaseTwo": None,
             "Doctor": "Huỳnh Ngọc Long",
             "FormattedDate": "1",
-            "Name": "Lê Trung Quân",
-            "PhoneNumber": "800958",
+            "Name": "Trần Văn Mạnh",
+            "PhoneNumber": None,
             "Speciality": "Chuyên Khoa Tim",
-            "Time": "09:00",
+            "Time": None,
             "UpdateSlot": None
         }
     },
@@ -243,7 +243,7 @@ def valid_appointment(doctor, speciality, date, time):
     return False
 
 
-def build_response_card(title, subtitle, options):
+def build_response_card(title, subtitle, options, imageUrl):
     """
     Build a responseCard with a title, subtitle, and an optional set of options which should be displayed as buttons.
     """
@@ -263,7 +263,8 @@ def build_response_card(title, subtitle, options):
                 genericAttachmentElement = {
                     'title': title,
                     'subTitle': subtitle,
-                    'buttons': buttons
+                    'buttons': buttons,
+                    "imageUrl": imageUrl,
                 }
                 genericAttachments.append(genericAttachmentElement)
                 cnt = 0
@@ -777,10 +778,10 @@ def build_options(slot, speciality, doctor, date, time, psid):
                     # lấy số slot có thể có trong ngày đang xét
                     cnt = 0  # số lượng slot có thể có trong ngày đang xét
                     try:
-                        print('potential_date:', potential_date)
+                        #print('potential_date:', potential_date)
                         # ngày kiểu datetime
                         date_weekday = day_strings[potential_date.weekday()]
-                        print('date_weekday:', date_weekday)
+                        #print('date_weekday:', date_weekday)
                         if speciality:
                             cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name = '{}' and ms.name = '{}' and wh.day='{}'  order by wh.time;".format(
                                 doctor, speciality, date_weekday))
@@ -797,8 +798,8 @@ def build_options(slot, speciality, doctor, date, time, psid):
                                 time_temp = row[0].split(' - ')
                             time_begin = time_temp[0]
                             time_end = time_temp[1]
-                            print('time_begin:', time_begin)
-                            print('time_end:', time_end)
+                            #print('time_begin:', time_begin)
+                            #print('time_end:', time_end)
                             # trừ lấy số giờ
                             format = '%H:%M'
                             time_begin = datetime.datetime.strptime(
@@ -814,12 +815,12 @@ def build_options(slot, speciality, doctor, date, time, psid):
                     except (Exception, psycopg2.Error) as error:
                         print("Error while connecting to PostgreSQL1", error)
                     # so sánh
-                    print('so luong lich da dat: ', booked)
-                    print('count:', cnt)
+                    #print('so luong lich da dat: ', booked)
+                    #print('count:', cnt)
                     if booked < cnt:
                         options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings[potential_date.weekday()]),
                                         'value': potential_date.strftime('%Y-%d-%m')})
-                        print('hi')
+                        # print('hi')
                     if len(records) == 0:
                         return None
                 except (Exception, psycopg2.Error) as error:
@@ -827,7 +828,7 @@ def build_options(slot, speciality, doctor, date, time, psid):
         if(connection):
             cursor.close()
             connection.close()
-            print('**********************')
+            # print('**********************')
         return options
     elif slot == 'Time':
         # Return the availabilities on the given date.
@@ -942,7 +943,7 @@ def build_options(slot, speciality, doctor, date, time, psid):
             #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
             cursor = connection.cursor()
             cursor.execute(
-                "SELECT a.patient_name FROM appointment_schedule as a where a.psid='{}';".format(psid))
+                "SELECT distinct a.patient_name FROM appointment_schedule as a where a.psid='{}';".format(psid))
             records = cursor.fetchall()
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
@@ -999,6 +1000,7 @@ def make_appointment(intent_request):
     DateOfBird = intent_request['currentIntent']['slots']['DateOfBird']
     PhoneNumber = intent_request['currentIntent']['slots']['PhoneNumber']
     FormattedDate = intent_request['currentIntent']['slots']['FormattedDate']
+    # UpdateSlot thể hiện slot cần được thay đổi khi tất cả các thông tin khoa, bác sĩ, ngày giờ được chọn không tồn tại
     UpdateSlot = intent_request['currentIntent']['slots']['UpdateSlot']
     Confirmation = intent_request['currentIntent']['slots']['Confirmation']
     source = intent_request['invocationSource']
@@ -1047,13 +1049,24 @@ def make_appointment(intent_request):
         if time:
             arr_time = time.split(':')
             if arr_time[1] != '00' and arr_time[1] != '30':
-                return elicit_slot(
-                    output_session_attributes,
-                    intent_request['currentIntent']['name'],
-                    slots, 'Time', {
-                        'contentType': 'PlainText',
-                        'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như 8am hoặc 8:30am. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'
-                    }, None)
+                hour = int(arr_time[0])
+                minute = int(arr_time[1])
+                if minute > 0 and minute < 30:
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'Time', {
+                            'contentType': 'PlainText',
+                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '00', hour, '30')
+                        }, None)
+                elif minute > 30:
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'Time', {
+                            'contentType': 'PlainText',
+                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '30', hour+1, '00')
+                        }, None)
         if date and not FormattedDate:
             # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
             # print(intent_request['currentIntent']['slots'])
@@ -1150,7 +1163,7 @@ def make_appointment(intent_request):
                 build_response_card(
                     'Các khoa của bệnh viện',
                     'Mời bạn chọn khoa mình muốn khám',
-                    build_options('Speciality', speciality, doctor, date, time, None)))
+                    build_options('Speciality', speciality, doctor, date, time, None), None))
         # không bác sĩ và có khoa
         elif not doctor:
             options = build_options(
@@ -1170,7 +1183,7 @@ def make_appointment(intent_request):
                     build_response_card(
                         'Các khoa của bệnh viện',
                         'Mời bạn chọn khoa mình muốn khám',
-                        build_options('Speciality', speciality, doctor, date, time, None)))
+                        build_options('Speciality', speciality, doctor, date, time, None), None))
             else:
                 slots['UpdateSlot'] = None
                 UpdateSlot = None
@@ -1184,8 +1197,9 @@ def make_appointment(intent_request):
                     build_response_card(
                         'Các bác sĩ hiện có của khoa',
                         'Mời bạn chọn bác sĩ',
-                        options))
+                        options, None))
         # có bác sĩ
+        #################
         else:
             element_of_name = doctor.split(' ')
             if len(element_of_name) == 1:
@@ -1221,9 +1235,9 @@ def make_appointment(intent_request):
                                 'content': message
                             },
                             build_response_card(
-                                'Các bác sĩ hiện có của khoa',
-                                'Mời bạn chọn bác sĩ',
-                                build_options('Doctor', speciality, doctor, date, time, None)))
+                                'Các bác sĩ tên {} của khoa'.format(doctor),
+                                'Mời bạn chọn họ và tên đầy đủ của bác sĩ',
+                                build_options('Doctor', speciality, doctor, date, time, None), None))
                 except (Exception, psycopg2.Error) as error:
                     print("Error while connecting to PostgreSQL", error)
                 finally:
@@ -1249,19 +1263,17 @@ def make_appointment(intent_request):
                             speciality = records[0][0]
                             slots['Speciality'] = speciality
                         elif len(records) > 1:
-                            slots['UpdateSlot'] = None
-                            UpdateSlot = None
                             return elicit_slot(
                                 output_session_attributes,
                                 intent_request['currentIntent']['name'],
-                                slots, 'Doctor', {
+                                slots, 'Speciality', {
                                     'contentType': 'PlainText',
                                     'content': 'Có nhiều khoa có bác sĩ tên {}, bạn muốn khám với khoa nào ạ?'.format(doctor)
                                 },
                                 build_response_card(
-                                    'Các bác sĩ hiện có của khoa',
-                                    'Mời bạn chọn bác sĩ',
-                                    build_options('Doctor', speciality, doctor, date, time, None)))
+                                    'Các khoa có bác sĩ tên {}'.format(doctor),
+                                    'Mời bạn chọn khoa',
+                                    build_options('Speciality', speciality, doctor, date, time, None), None))
                     except (Exception, psycopg2.Error) as error:
                         print("Error while connecting to PostgreSQL", error)
                     finally:
@@ -1270,6 +1282,7 @@ def make_appointment(intent_request):
                             cursor.close()
                             connection.close()
                             print("PostgreSQL connection is closed")
+            #########################
             # có bác sĩ và có khoa
             if not date:
                 options = build_options(
@@ -1290,7 +1303,7 @@ def make_appointment(intent_request):
                         build_response_card(
                             'Các bác sĩ hiện có của {}'.format(speciality),
                             'Mời bạn chọn bác sĩ',
-                            build_options('Doctor', speciality, doctor, date, time, None)))
+                            build_options('Doctor', speciality, doctor, date, time, None), None))
                 else:
                     return elicit_slot(
                         output_session_attributes,
@@ -1302,7 +1315,7 @@ def make_appointment(intent_request):
                         build_response_card(
                             '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
                             'Mời bạn chọn ngày khám bệnh',
-                            options))
+                            options, None))
             elif not time:
                 arr_date = date.split('-')
                 # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
@@ -1339,7 +1352,7 @@ def make_appointment(intent_request):
                         build_response_card(
                             '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
                             'Mời bạn chọn ngày khám bệnh',
-                            build_options('Date', speciality, doctor, date, time, None)))
+                            build_options('Date', speciality, doctor, date, time, None), None))
                 else:
                     return elicit_slot(
                         output_session_attributes,
@@ -1352,7 +1365,7 @@ def make_appointment(intent_request):
                             'Thời gian làm việc của bác sĩ {} trong ngày {}'.format(
                                 doctor, date_display),
                             'Mời bạn chọn thời gian hẹn bác sĩ',
-                            options))
+                            options, None))
             elif not name:
                 print('hello1')
                 # if doctor and date and time:
@@ -1379,7 +1392,7 @@ def make_appointment(intent_request):
                             build_response_card(
                                 'Để đặt được lịch bạn cần thay đổi 1 yếu tố',
                                 'Bạn muốn thay đổi yếu tố nào?',
-                                build_options('UpdateSlot', speciality, doctor, date, time, None)))
+                                build_options('UpdateSlot', speciality, doctor, date, time, None), None))
                 else:
                     slots['UpdateSlot'] = None
                     UpdateSlot = None
@@ -1396,7 +1409,7 @@ def make_appointment(intent_request):
                         build_response_card(
                             'Danh sách các bệnh nhân đã được đặt lịch hẹn bằng tài khoản Facebook này',
                             'Mời bạn chọn tên bệnh nhân',
-                            options))
+                            options, None))
             elif name == 'Người khác' or name == 'khác':
                 slots['Name'] = None
                 name = None
@@ -1410,6 +1423,9 @@ def make_appointment(intent_request):
                     cursor.execute(
                         "SELECT a.patient_name,a.date_of_birth,a.phone_number FROM appointment_schedule as a where a.patient_name ilike '{}' and a.psid='{}';".format(name, psid))
                     record = cursor.fetchone()
+                    name = record[0]
+                    DateOfBird = record[1].strftime('%Y-%m-%d')
+                    PhoneNumber = record[2]
                     slots['Name'] = record[0]
                     slots['DateOfBird'] = record[1].strftime('%Y-%m-%d')
                     slots['PhoneNumber'] = record[2]
@@ -1420,6 +1436,25 @@ def make_appointment(intent_request):
                         cursor.close()
                         connection.close()
                         print("PostgreSQL connection is closed")
+                options = build_options(
+                    'Confirmation', speciality, doctor, date, time, None)
+                arr_date = date.split('-')
+                date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
+                print(DateOfBird)
+                arr_date_of_bird = DateOfBird.split('-')
+                date_of_bird_display = arr_date_of_bird[2] + \
+                    '/'+arr_date_of_bird[1]+'/'+arr_date_of_bird[0]
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Confirmation', {
+                        'contentType': 'PlainText',
+                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của {} vào lúc {} ngày {}.'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
+                    },
+                    build_response_card(
+                        'Bạn có chắc chắn muốn đặt lịch hẹn không?',
+                        'Lựa chọn dành cho bạn',
+                        options, 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTyzsYL2jWkqRAexHhYrsFvoWnMMVdcwjeMdwf-0poUPi2-I6jd'))
             elif DateOfBird and not PhoneNumber:
                 # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
                 # print(intent_request['currentIntent']['slots'])
@@ -1450,12 +1485,12 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Confirmation', {
                         'contentType': 'PlainText',
-                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của khoa {} vào lúc {} ngày {}.'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
+                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của {} vào lúc {} ngày {}.'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
                     },
                     build_response_card(
                         'Bạn có chắc chắn muốn đặt lịch hẹn không?',
                         'Lựa chọn dành cho bạn',
-                        options))
+                        options, 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTyzsYL2jWkqRAexHhYrsFvoWnMMVdcwjeMdwf-0poUPi2-I6jd'))
             elif Confirmation == "Có":
                 # lưu lịch hẹn
                 try:

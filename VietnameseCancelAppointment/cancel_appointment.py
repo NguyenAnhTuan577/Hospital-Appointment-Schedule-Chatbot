@@ -794,6 +794,7 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 connection.close()
                 print("PostgreSQL connection is closed")
         res = []
+        set_doctor = set()
         if len(records) == 0:
             return None
         for row in records:
@@ -801,10 +802,12 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             str_value = row[0]
             date_of_appointment = row[1]
             if date_of_appointment >= datetime.date.today():
-                temp = {
-                    'text': str_value,
-                    'value': str_value}
-                res.append(temp)
+                set_doctor.add(str_value)
+        for i in set_doctor:
+            temp = ({
+                    'text': i,
+                    'value': i})
+            res.append(temp)
         print(res)
         return res
 

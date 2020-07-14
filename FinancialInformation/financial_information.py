@@ -641,7 +641,7 @@ def financial_information(intent_request):
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
         if not HospitalService:
-            message = "Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
+            message = "<3 Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
             imageUrl = "https://www.hoanmydongnai.com/upload/hoanmydongnai.com/images/service/2019-05-14/detail_1557819248_8ZfOSJvAeJ.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/thong-tin-danh-cho-benh-nhan/thong-tin-vien-phi/"
             options = build_options(
@@ -677,7 +677,7 @@ def financial_information(intent_request):
                 slots,
                 'Speciality', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn muốn khám tại khoa nào ạ?'
+                    'content': 'Dạ, bạn muốn khám tại khoa nào ạ?'
                 },
                 build_response_card(
                     'Các khoa của bệnh viện',
@@ -704,7 +704,7 @@ def financial_information(intent_request):
                 slots,
                 'AccountFBMakeAppointment', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
+                    'content': 'Vâng! Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
@@ -724,7 +724,7 @@ def financial_information(intent_request):
                 slots,
                 'AccountFBMakeAppointment', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
+                    'content': 'Hãy cho tôi biết bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
@@ -805,7 +805,7 @@ def financial_information(intent_request):
                 slots,
                 'Information', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn cần tìm hiểu thông tin về vấn đề gì ạ?'
+                    'content': 'Bạn cần tìm hiểu thông tin về vấn đề gì ạ? ;)'
                 },
                 build_response_card(
                     'Thông tin về bệnh viện',

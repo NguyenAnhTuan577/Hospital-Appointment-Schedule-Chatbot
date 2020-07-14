@@ -52,15 +52,15 @@ xxx = {
         "name": "VietnameseMakeAppointment",
         "slots": {
             "Confirmation": None,
-            "Date": "2020-07-09",
-            "DateOfBird": "1998-01-01",
+            "Date": None,
+            "DateOfBird": None,
             "DiseaseOne": None,
             "DiseaseTwo": None,
-            "Doctor": "Huỳnh Ngọc Long",
-            "FormattedDate": "1",
-            "Name": "Trần Văn Mạnh",
+            "Doctor": "Nguyễn Viết Quỳnh Thư",
+            "FormattedDate": None,
+            "Name": None,
             "PhoneNumber": None,
-            "Speciality": "Chuyên Khoa Tim",
+            "Speciality": "Khoa Dinh Dưỡng",
             "Time": None,
             "UpdateSlot": None
         }
@@ -152,7 +152,7 @@ def close2(session_attributes, fulfillment_state, message):
                         "title": "Các dịch vụ hỗ trợ của Chatbot",
                         "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
                         "imageUrl": "https://moitruong.net.vn/wp-content/uploads/2019/08/bo-y-te-ly-giai-ve-gia-giuong-dich-vu-4-trieu-dong-ngay-ngang-khach-san-hang-sang-hinh-anh0556686901.jpg",
-                        "attachmentLinkUrl": "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
                         "buttons": [
                             {
                                 "text": "Lấy lịch hẹn",
@@ -166,11 +166,24 @@ def close2(session_attributes, fulfillment_state, message):
                                 "text": "Hủy lịch hẹn",
                                 "value": "hủy hẹn"
                             }]
+                    },{
+                        "title": "Các dịch vụ hỗ trợ của Chatbot",
+                        "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
+                        "imageUrl": "https://moitruong.net.vn/wp-content/uploads/2019/08/bo-y-te-ly-giai-ve-gia-giuong-dich-vu-4-trieu-dong-ngay-ngang-khach-san-hang-sang-hinh-anh0556686901.jpg",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
+                        "buttons": [
+                            {
+                                "text": "Xem lịch hẹn",
+                                "value": "xem lịch hẹn"
+                            },
+                            {
+                                "text": "Xem thông tin bệnh viện",
+                                "value": "Xem thông tin bệnh viện"
+                            }]
                     }]
             }
         }
     }
-
     return response
 
 
@@ -208,6 +221,10 @@ def valid_appointment(doctor, speciality, date, time):
             time_temp = row[0].split(' – ')
             if(len(time_temp) != 2):
                 time_temp = row[0].split(' - ')
+            if(len(time_temp) != 2):
+                time_temp = row[0].split('–')
+            if(len(time_temp) != 2):
+                time_temp = row[0].split('-')
             time_begin = time_temp[0]
             time_end = time_temp[1]
             # print('time begin:---%s------'%time_begin)
@@ -730,7 +747,7 @@ def build_options(slot, speciality, doctor, date, time, psid):
             if len(records) == 0:
                 return None
         except (Exception, psycopg2.Error) as error:
-            print("Error while connecting to PostgreSQL", error)
+            print("Error while connecting to PostgreSQL ", error)
         # finally:
         #     # closing database connection.
         #     if(connection):
@@ -796,6 +813,10 @@ def build_options(slot, speciality, doctor, date, time, psid):
                             time_temp = row[0].split(' – ')
                             if(len(time_temp) != 2):
                                 time_temp = row[0].split(' - ')
+                            if(len(time_temp) != 2):
+                                time_temp = row[0].split('–')
+                            if(len(time_temp) != 2):
+                                time_temp = row[0].split('-')
                             time_begin = time_temp[0]
                             time_end = time_temp[1]
                             #print('time_begin:', time_begin)
@@ -884,6 +905,10 @@ def build_options(slot, speciality, doctor, date, time, psid):
                 time_temp = row[0].split(' – ')
                 if(len(time_temp) != 2):
                     time_temp = row[0].split(' - ')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split('–')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split('-')
                 time_begin = time_temp[0]
                 time_end = time_temp[1]
                 # print('time begin:---%s------'%time_begin)
@@ -1057,7 +1082,7 @@ def make_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Time', {
                             'contentType': 'PlainText',
-                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '00', hour, '30')
+                            'content': ';)Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '00', hour, '30')
                         }, None)
                 elif minute > 30:
                     return elicit_slot(
@@ -1158,7 +1183,7 @@ def make_appointment(intent_request):
                 intent_request['currentIntent']['name'],
                 slots, 'Speciality', {
                     'contentType': 'PlainText',
-                    'content': 'Xin chào {}. Bạn muốn khám tại khoa nào ạ?'.format(fb_name)
+                    'content': '^_^ Bạn muốn khám tại khoa nào ạ?'
                 },
                 build_response_card(
                     'Các khoa của bệnh viện',
@@ -1178,7 +1203,7 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Speciality', {
                         'contentType': 'PlainText',
-                        'content': 'Bạn có thể cho tôi biết bạn muốn tới khoa nào khám bệnh không?'
+                        'content': 'Vâng, bạn có thể cho tôi biết bạn muốn tới khoa nào khám bệnh không?'
                     },
                     build_response_card(
                         'Các khoa của bệnh viện',
@@ -1192,7 +1217,7 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Doctor', {
                         'contentType': 'PlainText',
-                        'content': 'Mời bạn chọn bác sĩ'
+                        'content': 'Bây giờ mời bạn chọn bác sĩ :D'
                     },
                     build_response_card(
                         'Các bác sĩ hiện có của khoa',
@@ -1268,7 +1293,7 @@ def make_appointment(intent_request):
                                 intent_request['currentIntent']['name'],
                                 slots, 'Speciality', {
                                     'contentType': 'PlainText',
-                                    'content': 'Có nhiều khoa có bác sĩ tên {}, bạn muốn khám với khoa nào ạ?'.format(doctor)
+                                    'content': 'Bệnh viện có nhiều khoa có bác sĩ tên {}, bạn muốn khám với khoa nào ạ?'.format(doctor)
                                 },
                                 build_response_card(
                                     'Các khoa có bác sĩ tên {}'.format(doctor),
@@ -1347,7 +1372,7 @@ def make_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Date', {
                             'contentType': 'PlainText',
-                            'content': 'Bác sĩ {} không làm việc vào ngày {}. Bạn có thể chọn ngày khác không ạ?'.format(doctor, date_display)
+                            'content': 'Rất tiếc bác sĩ {} không làm việc vào ngày {}. Bạn có thể chọn ngày khác không ạ?'.format(doctor, date_display)
                         },
                         build_response_card(
                             '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
@@ -1359,7 +1384,7 @@ def make_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Time', {
                             'contentType': 'PlainText',
-                            'content': 'Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'
+                            'content': 'Dạ, bạn muốn hẹn bác sĩ lúc mấy giờ ạ? ;)'
                         },
                         build_response_card(
                             'Thời gian làm việc của bác sĩ {} trong ngày {}'.format(
@@ -1377,10 +1402,10 @@ def make_appointment(intent_request):
                 if valid == False:  # cần sửa
                     if not UpdateSlot:
                         if speciality:
-                            message = 'Hiện tại bác sĩ {} của {} không rảnh vào {} ngày {}'.format(
+                            message = 'Rất tiếc khi hiện tại bác sĩ {} của {} không rảnh vào {} ngày {}'.format(
                                 doctor, speciality, time, date_display)
                         else:
-                            message = 'Hiện tại bác sĩ {} không rảnh vào {} ngày {}'.format(
+                            message = 'Rất tiếc khi hiện tại bác sĩ {} không rảnh vào {} ngày {}'.format(
                                 doctor, time, date_display)
                         return elicit_slot(
                             output_session_attributes,
@@ -1404,7 +1429,7 @@ def make_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Name', {
                             'contentType': 'PlainText',
-                            'content': 'Bạn muốn khám bệnh cho ai ạ?'
+                            'content': 'Vâng! Bạn muốn khám bệnh cho ai ạ?'
                         },
                         build_response_card(
                             'Danh sách các bệnh nhân đã được đặt lịch hẹn bằng tài khoản Facebook này',
@@ -1449,7 +1474,7 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Confirmation', {
                         'contentType': 'PlainText',
-                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của {} vào lúc {} ngày {}.'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
+                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của {} vào lúc {} ngày {}. ;)'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
                     },
                     build_response_card(
                         'Bạn có chắc chắn muốn đặt lịch hẹn không?',
@@ -1470,7 +1495,7 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'PhoneNumber', {
                         'contentType': 'PlainText',
-                        'content': 'Tôi cần biết số điện thoại để liên lạc với bệnh nhân?'
+                        'content': 'Bây giờ tôi cần biết số điện thoại để liên lạc với bệnh nhân?'
                     }, None)
             elif not Confirmation:
                 options = build_options(
@@ -1485,7 +1510,7 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Confirmation', {
                         'contentType': 'PlainText',
-                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của {} vào lúc {} ngày {}.'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
+                        'content': 'Thông tin chi tiết của bạn như sau: Bệnh nhân {} sinh ngày {} có số điện thoại {} có lịch hẹn với bác sĩ {} của {} vào lúc {} ngày {}. ^_^'.format(name, date_of_bird_display, PhoneNumber, doctor, speciality, time, date_display)
                     },
                     build_response_card(
                         'Bạn có chắc chắn muốn đặt lịch hẹn không?',
@@ -1698,5 +1723,5 @@ def lambda_handler(event, context):
     return dispatch(event)
 
 
-make_appointment(xxx)
+#make_appointment(xxx)
 # SELECT * FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name='Dr Do Thanh Long' and ms.name='Cardiology'

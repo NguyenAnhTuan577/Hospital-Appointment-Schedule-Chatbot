@@ -609,7 +609,7 @@ def insurance_service(intent_request):
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
         if not InsuranceInformation:
-            message = "Bạn muốn biết thông tin gì về dịch vụ bảo hiểm?"
+            message = "Cho tôi biết bạn muốn biết thông tin gì về dịch vụ bảo hiểm? <3"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-HIW-thumBANNER-insurance-04-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/"
             options = build_options(
@@ -628,7 +628,7 @@ def insurance_service(intent_request):
                 }, responseCard
             )
         elif InsuranceInformation == "Các đối tác thanh toán":
-            message = "Bệnh viện FV hợp tác với nhiều công ty bảo hiểm trong nước và quốc tế. Để biết danh sách các công ty, bấm vào hình bên dưới."
+            message = "<3<3<3 Bệnh viện FV hợp tác với nhiều công ty bảo hiểm trong nước và quốc tế. Để biết danh sách các công ty, bấm vào hình bên dưới."
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-ODBP-thumBANNER-insurance-01-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/cac-doi-tac-thanh-toan-truc-tiep/"
             options = build_options(
@@ -644,7 +644,7 @@ def insurance_service(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif InsuranceInformation == "Thông tin hữu ích":
-            message = "Bấm vào hình bên dưới để biết thêm một số thông tin hữu ích về dịch vụ bảo hiểm."
+            message = "Bấm vào hình bên dưới để biết thêm một số thông tin hữu ích về dịch vụ bảo hiểm. ;)"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-II-thumBANNER-insurance-02-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/thong-tin-huu-ich/"
             options = build_options(
@@ -676,7 +676,7 @@ def insurance_service(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif InsuranceInformation == "Chính sách":
-            message = "Bệnh viện FV cung cấp dịch vụ thanh toán bảo hiểm trực tiếp hoặc thanh toán tiền mặt. Bấm vào hình bên dưới để tìm hiểu thêm về các lựa chọn thanh toán hiện có tùy theo từng công ty cung cấp bảo hiểm"
+            message = ":) Bệnh viện FV cung cấp dịch vụ thanh toán bảo hiểm trực tiếp hoặc thanh toán tiền mặt. Bấm vào hình bên dưới để tìm hiểu thêm về các lựa chọn thanh toán hiện có tùy theo từng công ty cung cấp bảo hiểm"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-FVPolicy-thumBANNER-insurance-03-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/chinh-sach-cua-fv/"
             options = build_options(

@@ -145,8 +145,8 @@ def close2(session_attributes, fulfillment_state, message):
                     {
                         "title": "Các dịch vụ hỗ trợ của Chatbot",
                         "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
-                        "imageUrl": "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18",
-                        "attachmentLinkUrl": "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour",
+                        "imageUrl": "https://cms.luatvietnam.vn/uploaded/Images/Original/2018/08/28/benh-vien_2808175558.jpg",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
                         "buttons": [
                             {
                                 "text": "Lấy lịch hẹn",
@@ -160,11 +160,24 @@ def close2(session_attributes, fulfillment_state, message):
                                 "text": "Hủy lịch hẹn",
                                 "value": "hủy hẹn"
                             }]
+                    },{
+                        "title": "Các dịch vụ hỗ trợ của Chatbot",
+                        "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
+                        "imageUrl": "https://cms.luatvietnam.vn/uploaded/Images/Original/2018/08/28/benh-vien_2808175558.jpg",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
+                        "buttons": [
+                            {
+                                "text": "Xem lịch hẹn",
+                                "value": "xem lịch hẹn"
+                            },
+                            {
+                                "text": "Xem thông tin bệnh viện",
+                                "value": "Xem thông tin bệnh viện"
+                            }]
                     }]
             }
         }
     }
-
     return response
 
 
@@ -585,61 +598,6 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 'value': row[1]}
             res.append(temp)
         return res
-    # elif slot == 'Date1':
-    #     try:
-    #         connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
-
-    #         cursor = connection.cursor()
-    #         # Print PostgreSQL Connection properties
-    #         print ("hi", connection.get_dsn_parameters(),"\n")
-    #         print("khoa:%s"%speciality)
-    #         print("bacsi:%s"%doctor)
-
-    #          # Print PostgreSQL version
-    #         cursor.execute("SELECT distinct wh.day FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name=%s and ms.name=%s;",(doctor,speciality))
-    #         records = cursor.fetchall()
-    #     except (Exception, psycopg2.Error) as error :
-    #          print ("Error while connecting to PostgreSQL", error)
-    #     finally:
-    #         #closing database connection.
-    #         if(connection):
-    #             cursor.close()
-    #             connection.close()
-    #             print("PostgreSQL connection is closed")
-    #     res=[]
-    #     dict_date = {'Mon': False, 'Tue': False, 'Wed': False,'Thu':False,'Fri':False,'Sat':False,'Sun':False}
-    #     date_of_week=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-    #     for row in records:
-    #         if(row[0]=='Mon'):
-    #             dict_date['Mon']=True
-    #         elif row[0]=='Tue':
-    #             dict_date['Tue']=True
-    #         elif row[0]=='Wed':
-    #             dict_date['Wed']=True
-    #         elif row[0]=='Thu':
-    #             dict_date['Thu']=True
-    #         elif row[0]=='Fri':
-    #             dict_date['Fri']=True
-    #         elif row[0]=='Sat':
-    #             dict_date['Sat']=True
-    #         elif row[0]=='Sun':
-    #             dict_date['Sun']=True
-    #     day_index=datetime.date.today().weekday()
-    #     day_value=datetime.date.today()
-    #     i=0
-    #     while i<14:
-    #         key=date_of_week[day_index]
-    #         value=dict_date[key]
-    #         if(value==True):
-    #             temp={
-    #             'text': day_value,
-    #             'value': day_value}
-    #         res.append(temp)
-    #         day_index=day_index+1
-    #         day_index=day_index%7
-    #         day_value=day_value+ timedelta(days=1)
-    #         i=i+1
-    #     return res
     elif slot == 'Date':
         # Return the next five weekdays.
         try:
@@ -722,7 +680,6 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             # print ("hi", connection.get_dsn_parameters(),"\n")
             # print("khoa:%s"%speciality)
             # print("bacsi:%s"%doctor)
-
             # try:
             #     date_weekdate=datetime.datetime.strptime(date, '%d/%m/%y').date().weekday() #ngày kiểu datetime
             # except ValueError as ve:
@@ -741,6 +698,10 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 time_temp = row[0].split(' – ')
                 if(len(time_temp) != 2):
                     time_temp = row[0].split(' - ')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split('–')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split('-')
                 time_begin = time_temp[0]
                 time_end = time_temp[1]
                 print('time begin:---%s------' % time_begin)
@@ -779,7 +740,7 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
                 cursor.execute(
-                    "SELECT a.doctor,a.date FROM appointment_schedule as a WHERE a.patient_name='{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name, DateOfBird, PhoneNumber))
+                    "SELECT a.doctor,a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name, DateOfBird, PhoneNumber))
                 records = cursor.fetchall()
             else:
                 cursor.execute(
@@ -891,7 +852,7 @@ def cancel_appointment(intent_request):
                 'AccountFBMakeAppointment',
                 {
                     'contentType': 'PlainText',
-                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
+                    'content': ':) Để hủy lịch hẹn tôi cần biết bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác ạ?  ;)'
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
@@ -908,7 +869,7 @@ def cancel_appointment(intent_request):
                         'Name',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết tên của bệnh nhân'
+                            'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết tên của bệnh nhân'
                         },
                         None)
                 else:
@@ -917,7 +878,7 @@ def cancel_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         intent_request['currentIntent']['slots'], 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Chào {}! Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ?'.format(fb_first_name)
+                            'content': 'Chào {}! Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ? :D'.format(fb_first_name)
                         },
                         build_response_card(
                             'Bạn có các lịch hẹn với các bác sĩ sau đây',
@@ -932,7 +893,7 @@ def cancel_appointment(intent_request):
                         'Name',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Tên của bệnh nhân là gì ạ?'
+                            'content': 'Dạ, tên của bệnh nhân là gì ạ?'
                         },
                         None)
                 if not DateOfBird:
@@ -943,7 +904,7 @@ def cancel_appointment(intent_request):
                         'DateOfBird',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Tôi cần biết ngày sinh của bệnh nhân'
+                            'content': 'Bây giờ tôi cần biết ngày sinh của bệnh nhân?'
                         },
                         None)
                 if not PhoneNumber:
@@ -959,7 +920,7 @@ def cancel_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         intent_request['currentIntent']['slots'], 'PhoneNumber', {
                             'contentType': 'PlainText',
-                            'content': 'Cho tôi xin số điện thoại đã đặt lịch hẹn.?'
+                            'content': 'Bây giờ cho tôi xin số điện thoại đã đặt lịch hẹn? ^_^'
                         }, None)
                 if build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber) == None:
                     slots['Name'] = None
@@ -972,7 +933,7 @@ def cancel_appointment(intent_request):
                         'Name',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Tên bệnh nhân là gì?.'.format(name, DateOfBird, PhoneNumber)
+                            'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Tên bệnh nhân là gì?. :)'.format(name, DateOfBird, PhoneNumber)
                         },
                         None)
                 else:
@@ -981,7 +942,7 @@ def cancel_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         intent_request['currentIntent']['slots'], 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ?'
+                            'content': 'Cho tôi biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ? ^_^'
                         },
                         build_response_card(
                             'Bệnh nhân {} có lịch hẹn với các bác sĩ sau:'.format(
@@ -1010,7 +971,7 @@ def cancel_appointment(intent_request):
                         'Fulfilled',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Thông tin lịch hẹn trên không tồn tại. Hủy lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
+                            'content': '^_^ Thông tin lịch hẹn trên không tồn tại. Hủy lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
                         }
                     )
 
@@ -1033,7 +994,7 @@ def cancel_appointment(intent_request):
                 'Fulfilled',
                 {
                     'contentType': 'PlainText',
-                    'content': 'Hủy lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
+                    'content': 'Hủy lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ trợ khác của chat bot. O:)'
                 }
             )
 
@@ -1279,5 +1240,5 @@ def lambda_handler(event, context):
     return dispatch(event)
 
 
-cancel_appointment(xxx)
+#cancel_appointment(xxx)
 # SELECT * FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name='Dr Do Thanh Long' and ms.name='Cardiology'

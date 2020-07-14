@@ -152,7 +152,7 @@ def close2(session_attributes, fulfillment_state, message):
                         "title": "Các dịch vụ hỗ trợ của Chatbot",
                         "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
                         "imageUrl": "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18",
-                        "attachmentLinkUrl": "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
                         "buttons": [
                             {
                                 "text": "Lấy lịch hẹn",
@@ -166,11 +166,24 @@ def close2(session_attributes, fulfillment_state, message):
                                 "text": "Hủy lịch hẹn",
                                 "value": "hủy hẹn"
                             }]
+                    },{
+                        "title": "Các dịch vụ hỗ trợ của Chatbot",
+                        "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
+                        "imageUrl": "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
+                        "buttons": [
+                            {
+                                "text": "Xem lịch hẹn",
+                                "value": "xem lịch hẹn"
+                            },
+                            {
+                                "text": "Xem thông tin bệnh viện",
+                                "value": "Xem thông tin bệnh viện"
+                            }]
                     }]
             }
         }
     }
-
     return response
 
 
@@ -762,6 +775,10 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 time_temp = row[0].split(' – ')
                 if(len(time_temp) != 2):
                     time_temp = row[0].split(' - ')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split('–')
+                if(len(time_temp) != 2):
+                    time_temp = row[0].split('-')
                 time_begin = time_temp[0]
                 time_end = time_temp[1]
                 # print('time begin:---%s------'%time_begin)
@@ -953,7 +970,7 @@ def update_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Time', {
                             'contentType': 'PlainText',
-                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '00', hour, '30')
+                            'content': 'Xin lỗi nhưng bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ? ;)'.format(hour, '00', hour, '30')
                         }, None)
                 elif minute > 30:
                     return elicit_slot(
@@ -961,7 +978,7 @@ def update_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Time', {
                             'contentType': 'PlainText',
-                            'content': 'Bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ?'.format(hour, '30', hour+1, '00')
+                            'content': 'Xin lỗi nhưng bạn cần chọn giờ khám bệnh là giờ tròn ví dụ như {}:{} hoặc {}:{}. Bạn muốn hẹn bác sĩ lúc mấy giờ ạ? ;)'.format(hour, '30', hour+1, '00')
                         }, None)
         if not AccountFBMakeAppointment:
             return elicit_slot(
@@ -971,7 +988,7 @@ def update_appointment(intent_request):
                 'AccountFBMakeAppointment',
                 {
                     'contentType': 'PlainText',
-                    'content': 'Chào {}! Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'.format(fb_first_name)
+                    'content': 'Chào {}! Tôi sẽ thay đổi lịch hẹn cho bạn! \n Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác? :)'.format(fb_first_name)
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
@@ -997,7 +1014,7 @@ def update_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         intent_request['currentIntent']['slots'], 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Không biết bạn muốn thay đổi lịch hẹn với bác sĩ nào ạ?'
+                            'content': 'O:) Không biết bạn muốn thay đổi lịch hẹn với bác sĩ nào ạ?'
                         },
                         build_response_card(
                             'Bạn có các lịch hẹn với các bác sĩ sau đây',
@@ -1111,7 +1128,7 @@ def update_appointment(intent_request):
                 intent_request['currentIntent']['name'],
                 slots, 'ChangeType', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn muốn cập nhật thông tin nào ạ?'
+                    'content': 'Dạ, bạn muốn cập nhật thông tin nào ạ? <3'
                 },
                 build_response_card(
                     'Danh mục muốn thay đổi:',
@@ -1164,7 +1181,7 @@ def update_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Speciality', {
                         'contentType': 'PlainText',
-                        'content': 'Bạn có thể cho tôi biết bạn muốn tới khoa nào khám bệnh không?'
+                        'content': 'Bạn có thể cho tôi biết bạn muốn tới khoa nào khám bệnh không? <3'
                     },
                     build_response_card(
                         'Cập nhật lịch hẹn',
@@ -1176,7 +1193,7 @@ def update_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Doctor', {
                         'contentType': 'PlainText',
-                        'content': 'Bạn muốn khám với bác sĩ nào?'
+                        'content': 'Bạn muốn tôi lấy lịch cho bạn với bác sĩ nào ạ? :D'
                     },
                     build_response_card(
                         'Cập nhật lịch hẹn',
@@ -1196,7 +1213,7 @@ def update_appointment(intent_request):
                     if not speciality:
                         cursor.execute(
                             "SELECT * FROM doctors as d,medical_specialities as ms WHERE ms.id=d.speciality_id and  d.name ILIKE '% {}';".format(doctor))
-                        message = 'Có nhiều bác sĩ tên {}, bạn muốn khám với bác sĩ nào ạ?'.format(
+                        message = 'Bệnh viện chúng tôi có nhiều bác sĩ tên {}, bạn muốn khám với bác sĩ nào ạ?'.format(
                             doctor)
                     else:
                         cursor.execute(
@@ -1271,7 +1288,7 @@ def update_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Doctor', {
                         'contentType': 'PlainText',
-                        'content': 'Hãy chọn bác sĩ mà bạn muốn hẹn'
+                        'content': 'Bây giờ hãy chọn bác sĩ mà bạn muốn hẹn'
                     },
                     build_response_card(
                         'Cập nhật lịch hẹn',
@@ -1284,7 +1301,7 @@ def update_appointment(intent_request):
                     slots, 'Date',
                     {
                         'contentType': 'PlainText',
-                        'content': 'Không biết bạn có thể gặp bác sĩ {} vào ngày nào ạ?'.format(doctor)
+                        'content': 'Dạ! Bạn có thể gặp bác sĩ {} vào ngày nào ạ? ^_^'.format(doctor)
                     },
                     build_response_card(
                         'Cập nhật lịch hẹn',
@@ -1316,7 +1333,7 @@ def update_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Date', {
                         'contentType': 'PlainText',
-                        'content': 'Bạn muốn đặt lịch hẹn vào ngày mấy ạ?'
+                        'content': 'Tôi cần biết bạn muốn thay đổi lịch hẹn đến ngày nào? ;)'
                     },
                     build_response_card(
                         'Cập nhật lịch hẹn',
@@ -1328,7 +1345,7 @@ def update_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Time', {
                         'contentType': 'PlainText',
-                        'content': 'Bạn có thể gặp bác sĩ vào lúc nào trong ngày {}'.format(date_display)
+                        'content': 'Bạn có thể gặp bác sĩ vào lúc nào trong ngày {} ^_^'.format(date_display)
                     },
                     build_response_card(
                         'Cập nhật lịch hẹn',
@@ -1360,7 +1377,7 @@ def update_appointment(intent_request):
                         'Fulfilled',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Thông tin lịch hẹn trên không tồn tại. Cập nhật lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
+                            'content': '<3 Thông tin lịch hẹn trên không tồn tại. Cập nhật lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
                         }
                     )
 
@@ -1383,7 +1400,7 @@ def update_appointment(intent_request):
                 'Fulfilled',
                 {
                     'contentType': 'PlainText',
-                    'content': 'Cập nhật lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
+                    'content': 'Cập nhật lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ trợ khác của chat bot. O:) '
                 }
             )
         # if appointment_type and not date:
@@ -1534,5 +1551,5 @@ def lambda_handler(event, context):
     return dispatch(event)
 
 
-update_appointment(xxx)
+#update_appointment(xxx)
 # SELECT * FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name='Dr Do Thanh Long' and ms.name='Cardiology'

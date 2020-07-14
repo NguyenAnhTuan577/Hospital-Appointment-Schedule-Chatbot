@@ -649,11 +649,11 @@ def check_appointment(intent_request):
             #             'text': i,
             #             'value': i})
             #     options.append(temp)
-            message = "Các lịch hẹn:"
+            message = "Đây là các lịch hẹn hiện có của bạn: <3"
             for row in records:
                 date_of_appointment = row[2]
                 if date_of_appointment >= datetime.date.today():
-                    element = " Bác sĩ {} của {} lúc {} ngày {},".format(
+                    element = "\n * Bác sĩ {} của {} lúc {} ngày {},".format(
                         row[1], row[0], row[3].strftime("%H:%M"), row[2].strftime("%d/%m/%Y"))
                     message = message+element
             message = message[0: -1]
@@ -690,7 +690,7 @@ def check_appointment(intent_request):
                 slots,
                 'ChangeType', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn muốn cập nhật thông tin nào ạ?'
+                    'content': 'Bạn muốn cập nhật thông tin nào ạ? O:)'
                 },
                 build_response_card(
                     'Danh mục muốn thay đổi:',
@@ -710,7 +710,7 @@ def check_appointment(intent_request):
                 slots,
                 'Confirmation', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn có chắc chắn muốn hủy lịch hẹn với bác sĩ {}?'.format(Appointment)
+                    'content': 'Bạn có chắc chắn muốn hủy lịch hẹn với bác sĩ {}? O:)'.format(Appointment)
                 },
                 build_response_card(
                     'Bạn có chắc chắn muốn hủy lịch hẹn',
@@ -724,7 +724,7 @@ def check_appointment(intent_request):
         slots,
         'Appointment', {
             'contentType': 'PlainText',
-            'content': 'Các lịch khám bệnh hiện có của bạn'
+            'content': '<3 Đây là các lịch khám bệnh hiện có của bạn:'
         },
         build_response_card(
             'Bạn có các lịch hẹn với các bác sĩ sau đây',

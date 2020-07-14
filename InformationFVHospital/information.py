@@ -630,7 +630,7 @@ def hospital_information(intent_request):
             )
         elif Information == "Bảo hiểm":
             slots = {"InsuranceInformation": None}
-            message = "Bạn muốn biết thông tin gì về dịch vụ bảo hiểm?"
+            message = ":D Bây giờ bạn muốn biết thông tin gì về dịch vụ bảo hiểm?"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-HIW-thumBANNER-insurance-04-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/"
             options = build_options(
@@ -650,7 +650,7 @@ def hospital_information(intent_request):
             )
         elif Information == "Viện phí":
             slots = {"HospitalService": None}
-            message = "Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
+            message = "<3 Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
             imageUrl = "https://www.hoanmydongnai.com/upload/hoanmydongnai.com/images/service/2019-05-14/detail_1557819248_8ZfOSJvAeJ.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/thong-tin-danh-cho-benh-nhan/thong-tin-vien-phi/"
             options = build_options(
@@ -669,7 +669,7 @@ def hospital_information(intent_request):
                 }, responseCard
             )
         elif Information == "Cơ sở vật chất":
-            message = "Bệnh viện FV được trang bị đầy đủ để phục vụ mọi nhu cầu theo dõi và điều trị. Tất cả các phòng điều trị nội trú đều rộng rãi, sạch sẽ và được trang bị đầy đủ tiện nghi. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
+            message = "Bệnh viện FV được trang bị đầy đủ để phục vụ mọi nhu cầu theo dõi và điều trị. Tất cả các phòng điều trị nội trú đều rộng rãi, sạch sẽ và được trang bị đầy đủ tiện nghi. Bấm vào hình bên dưới để biết thêm thông tin chi tiết.<3<3<3"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2017/02/informationforpatient-yourroomatfv-desktop-2-2016-765xNull.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/thong-tin-danh-cho-benh-nhan/phong-dieu-tri-noi-tru-tai-benh-vien-fv/"
             options = build_options(
@@ -685,7 +685,7 @@ def hospital_information(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif Information == "Hội viên":
-            message = "Hội viên của bệnh viện Pháp - Việt được hưởng rất nhiều quyền lợi. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
+            message = "Hội viên của bệnh viện Pháp - Việt được hưởng rất nhiều quyền lợi. Bấm vào hình bên dưới để biết thêm thông tin chi tiết. ;)"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-fvmp-membership-guide-thumBANNER-05-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/chuong-trinh-hoi-vien-fv/"
             options = build_options(

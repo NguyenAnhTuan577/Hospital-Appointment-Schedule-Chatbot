@@ -641,7 +641,7 @@ def contact_information(intent_request):
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
         if not HospitalService:
-            message = "Bệnh viện Pháp-Việt nằm tại số 6 Nguyễn Lương Bằng, Nam Sài Gòn (Phú Mỹ Hưng), Quận 7, Tp. Hồ Chí Minh. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33"
+            message = "Chào bạn! Bệnh viện Pháp-Việt nằm tại số 6 Nguyễn Lương Bằng, Nam Sài Gòn (Phú Mỹ Hưng), Quận 7, Tp. Hồ Chí Minh. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33 <3"
             imageUrl = "https://static.ybox.vn/2016/8/25/54e0d5ce-6a74-11e6-b2ba-04011537df01.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/contact-us/hospital-contact-information/"
             options = build_options(
@@ -677,7 +677,7 @@ def contact_information(intent_request):
                 slots,
                 'Speciality', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn muốn khám tại khoa nào ạ?'
+                    'content': 'Dạ, bạn muốn khám tại khoa nào ạ?'
                 },
                 build_response_card(
                     'Các khoa của bệnh viện',
@@ -704,7 +704,7 @@ def contact_information(intent_request):
                 slots,
                 'AccountFBMakeAppointment', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
+                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác? :D'
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
@@ -724,7 +724,7 @@ def contact_information(intent_request):
                 slots,
                 'AccountFBMakeAppointment', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác?'
+                    'content': 'Bây giờ cho tôi biết bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác? :)'
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
@@ -805,7 +805,7 @@ def contact_information(intent_request):
                 slots,
                 'Information', {
                     'contentType': 'PlainText',
-                    'content': 'Bạn cần tìm hiểu thông tin về vấn đề gì ạ?'
+                    'content': 'Dạ, bạn cần tìm hiểu thông tin về vấn đề gì ạ? <3'
                 },
                 build_response_card(
                     'Thông tin về bệnh viện',

@@ -559,8 +559,8 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             'text': 'Ngày', 'value': 'Ngày'}, {'text': 'Giờ', 'value': 'Giờ'}]
         return res
     elif slot == 'Confirmation':
-        res = [{'text': 'Tôi muốn hủy', 'value': 'Có'}, {
-            'text': 'Tôi chưa muốn hủy', 'value': 'Không'}]
+        res = [{'text': 'Có', 'value': 'Có'}, {
+            'text': 'Không', 'value': 'Không'}]
         return res
 
 

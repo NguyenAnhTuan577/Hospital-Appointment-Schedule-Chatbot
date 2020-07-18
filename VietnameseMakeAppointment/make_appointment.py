@@ -52,17 +52,17 @@ xxx = {
         "name": "VietnameseMakeAppointment",
         "slots": {
             "Confirmation": None,
-            "Date": None,
-            "DateOfBird": None,
-            "DiseaseOne": None,
-            "DiseaseTwo": None,
-            "Doctor": "Nguyễn Viết Quỳnh Thư",
-            "FormattedDate": None,
-            "Name": None,
-            "PhoneNumber": None,
-            "Speciality": "Khoa Dinh Dưỡng",
-            "Time": None,
-            "UpdateSlot": None
+    "Date": "2020-07-21",
+    "DateOfBird": None,
+    "DiseaseOne": None,
+    "DiseaseTwo": None,
+    "Doctor": "Nguyễn Thị Ngọc Dung",
+    "FormattedDate": "1",
+    "Name": "văn an",
+    "PhoneNumber": None,
+    "Speciality": "Khoa Nhi và Nhi sơ sinh",
+    "Time": "08:00",
+    "UpdateSlot": None
         }
     },
     "requestAttributes": {
@@ -1217,10 +1217,10 @@ def make_appointment(intent_request):
                     intent_request['currentIntent']['name'],
                     slots, 'Doctor', {
                         'contentType': 'PlainText',
-                        'content': 'Bây giờ mời bạn chọn bác sĩ :D'
+                        'content': 'Chào mừng bạn đến với {}. Bạn muốn khám với bác sĩ nào ạ? :D'.format(speciality)
                     },
                     build_response_card(
-                        'Các bác sĩ hiện có của khoa',
+                        'Các bác sĩ hiện có của {}'.format(speciality),
                         'Mời bạn chọn bác sĩ',
                         options, None))
         # có bác sĩ

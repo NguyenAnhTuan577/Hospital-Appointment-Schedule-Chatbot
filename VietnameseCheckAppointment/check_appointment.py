@@ -51,8 +51,12 @@ xxx = {
     "currentIntent": {
         "name": "VietnameseCheckAppointment",
         "slots": {
-            "Appointment": None,
-            "HospitalService": None
+            "AccountFBMakeAppointment": "Tài khoản này",
+    "Appointment": None,
+    "DateOfBird": None,
+    "HospitalService": None,
+    "Name": None,
+    "PhoneNumber": None
         }
     },
     "requestAttributes": {
@@ -60,7 +64,7 @@ xxx = {
         "x-amz-lex:channel-id": "XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
         "x-amz-lex:webhook-endpoint-url": "https://channels.lex.us-east-1.amazonaws.com/facebook/webhook/XXX-XXXX-XXXXXXXXX",
         "x-amz-lex:accept-content-types": "PlainText",
-        "x-amz-lex:user-id": "2768186586569088",
+        "x-amz-lex:user-id": "2872158819534978",
         "x-amz-lex:channel-name": "FacebookLexBotAppName",
         "x-amz-lex:channel-type": "Facebook"
     }
@@ -510,7 +514,19 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
     Build a list of potential options for a given slot, to be used in responseCard generation.
     """
     day_strings = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    if slot == 'Appointment':
+    if slot == "AccountFBMakeAppointment":
+        temp1 = {
+            'text': "Tài khoản này",
+            'value': "Tài khoản này"}
+        temp2 = {
+            'text': "Tài khoản khác",
+            'value': "Tài khoản khác"
+        }
+        res = []
+        res.append(temp1)
+        res.append(temp2)
+        return res
+    elif slot == 'Appointment':
         try:
             connection = psycopg2.connect(
                 "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
@@ -523,11 +539,11 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
                 cursor.execute(
-                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}';".format(name, DateOfBird, PhoneNumber))
+                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(name, DateOfBird, PhoneNumber))
                 records = cursor.fetchall()
             else:
                 cursor.execute(
-                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.psid='{}';".format(psid))
+                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.psid='{}' and a.date+1>now();".format(psid))
                 records = cursor.fetchall()
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
@@ -576,15 +592,18 @@ def check_appointment(intent_request):
     2) Use of confirmIntent to support the confirmation of inferred slot values, when confirmation is required
     on the bot model and the inferred slot values fully specify the intent.
     """
-    # service_type = intent_request['currentIntent']['slots']['HospitalService']
+    AccountFBMakeAppointment = intent_request['currentIntent']['slots']['AccountFBMakeAppointment']
     Appointment = intent_request['currentIntent']['slots']['Appointment']
+    name = intent_request['currentIntent']['slots']['Name']
+    DateOfBird = intent_request['currentIntent']['slots']['DateOfBird']
+    PhoneNumber = intent_request['currentIntent']['slots']['PhoneNumber']
     HospitalService = intent_request['currentIntent']['slots']['HospitalService']
     source = intent_request['invocationSource']
     output_session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {
     }
     # booking_map = json.loads(try_ex(lambda: output_session_attributes['bookingMap']) or '{}')
     psid = "2768186586569088"
-    # psid="2872158819534978"
+    #psid="2872158819534978"
     try:
         psid = intent_request['requestAttributes']['x-amz-lex:user-id']
     except Exception as error:
@@ -606,31 +625,111 @@ def check_appointment(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
-        if Appointment == None:
+        if not AccountFBMakeAppointment:
+            # AccountFBMakeAppointment = "Tài khoản này"
+            # slots['AccountFBMakeAppointment'] = "Tài khoản này"
+            return elicit_slot(
+                output_session_attributes,
+                intent_request['currentIntent']['name'],
+                intent_request['currentIntent']['slots'],
+                'AccountFBMakeAppointment',
+                {
+                    'contentType': 'PlainText',
+                    'content': ':) Bạn muốn xem lịch hẹn được đặt bởi tài khoản facebook này hay tài khoản khác ạ?  ;)'
+                },
+                build_response_card(
+                    'Tài khoản Facebook đã dùng để đặt lịch',
+                    'Mời bạn chọn loại tài khoản',
+                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None)))
+        if AccountFBMakeAppointment == 'Tài khoản này':
+            options=build_options('Appointment', None, None, None, None, psid, None, None, None)
+            if options==None:
+                slots['AccountFBMakeAppointment'] = "Tài khoản khác"
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots,
+                    'Name',
+                    {
+                        'contentType': 'PlainText',
+                        'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Có thể bạn muốn xem lịch hẹn được đặt bởi một tài khoản facebook khác. Làm ơn cho tôi biết tên bệnh nhân mà bạn muốn xem.'
+                    },None)
+        elif AccountFBMakeAppointment=='Tài khoản khác':
+            if not name:
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots,
+                    'Name',
+                    {
+                        'contentType': 'PlainText',
+                        'content': 'Dạ, Họ tên của bệnh nhân là gì ạ?'
+                    },
+                    None)
+            if not DateOfBird:
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots,
+                    'DateOfBird',
+                    {
+                        'contentType': 'PlainText',
+                        'content': 'Bây giờ tôi cần biết ngày sinh của bệnh nhân?'
+                    },
+                    None)
+            if not PhoneNumber:
+                # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
+                print(intent_request['currentIntent']['slots'])
+                arr_date = DateOfBird.split('-')
+                if int(arr_date[2]) < 13:
+                    arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
+                DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
+                slots['DateOfBird'] = DateOfBird
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'PhoneNumber', {
+                        'contentType': 'PlainText',
+                        'content': 'Bây giờ cho tôi xin số điện thoại đã đặt lịch hẹn? ^_^'
+                    }, None)
+            options=build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber)
+            if options==None:
+                slots['Name'] = None
+                slots['DateOfBird'] = None
+                slots['PhoneNumber'] = None
+                arr_date_of_bird = DateOfBird.split('-')
+                date_of_bird_display = arr_date_of_bird[2] + '/'+arr_date_of_bird[1]+'/'+arr_date_of_bird[0]
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots,
+                    'Name',
+                    {
+                        'contentType': 'PlainText',
+                        'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Họ tên bệnh nhân là gì?. :)'.format(name, date_of_bird_display, PhoneNumber)
+                    },
+                    None)
+        if not Appointment:
             try:
                 connection = psycopg2.connect(
                     "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-                # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
-
                 cursor = connection.cursor()
-                # Print PostgreSQL Connection properties
-                print(connection.get_dsn_parameters(), "\n")
-
-                # Print PostgreSQL version
-                cursor.execute(
-                    "SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' order by a.date;".format(psid))
+                if name and DateOfBird and PhoneNumber:
+                    query="SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now() order by a.date;".format(name,DateOfBird,PhoneNumber)
+                else:
+                    query="SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' and a.date+1>now() order by a.date;".format(psid)
+                cursor.execute(query)
                 records = cursor.fetchall()
             except (Exception, psycopg2.Error) as error:
                 print("Error while connecting to PostgreSQL", error)
             finally:
-                # closing database connection.
                 if(connection):
                     cursor.close()
                     connection.close()
                     print("PostgreSQL connection is closed")
             options = []
             set_doctor = set()
-            if len(records) == 0:
+            if cursor.rowcount == 0:
                 return None
             for row in records:
                 # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
@@ -670,17 +769,81 @@ def check_appointment(intent_request):
                     'Bạn có các lịch hẹn với các bác sĩ sau đây:',
                     options)
             )
+        elif not HospitalService:
+            try:
+                connection = psycopg2.connect(
+                    "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+                cursor = connection.cursor()
+                if name and DateOfBird and PhoneNumber:
+                    cursor.execute(
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(Appointment, name, DateOfBird, PhoneNumber))
+                else:
+                    cursor.execute(
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and a.date+1>now();".format(Appointment,psid))
+                records = cursor.fetchall()
+                count = cursor.rowcount
+                if count == 0:
+                    # vào được đây có nghĩa là build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber) đã oke
+                    slots['Appointment']=None
+                    options=build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber)
+                    if options==None:#đã xử lý từ trước nên options ở trong này không bao giờ null
+                        return delegate(output_session_attributes, slots)
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'Appointment', {
+                            'contentType': 'PlainText',
+                            'content': 'Không tồn tại lịch hẹn với bác sĩ {}. Bạn cần thay đổi hoặc hủy lịch hẹn với bác sĩ nào ạ?'.format(Appointment)
+                        },
+                        build_response_card(
+                            'Các lịch hẹn hiện có:',
+                            'Mời bạn chọn lịch hẹn muốn hủy',
+                            options))
+                elif count==1:
+                    slots['Name'] = records[0][0]
+                    slots['DateOfBird'] = records[0][1].strftime('%Y-%m-%d')
+                    slots['PhoneNumber'] = records[0][2]
+                    slots['Appointment'] = records[0][3]
+                    Appointment=records[0][3]
+                    return delegate(output_session_attributes, slots)
+                else:
+                    element_of_name = Appointment.split(' ')
+                    if len(element_of_name) == 1:
+                        options = []
+                        for row in records:
+                            temp = {
+                                'text': row[3],
+                                'value': row[3]}
+                            options.append(temp)
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'Appointment', {
+                                'contentType': 'PlainText',
+                                'content': 'Có nhiều bác sĩ tên {}. Bạn muốn hủy hẹn với bác sĩ nào ạ?'.format(Appointment)
+                            },
+                            build_response_card(
+                                'Các bác sĩ tên {} của khoa'.format(Appointment),
+                                'Mời bạn chọn họ và tên đầy đủ của bác sĩ',
+                                options))
+                    #nếu lịch hẹn cùng 1 bệnh nhân, cùng 1 tài khoản đặt thì hủy toàn bộ lịch đó(nhưng sẽ chặn trường hợp này trong xử lý MakeAppointment)
+            except (Exception, psycopg2.Error) as error:
+                print("Error while connecting to PostgreSQL", error)
+            finally:
+                if(connection):
+                    cursor.close()
+                    connection.close()
         elif HospitalService == 'Chỉnh sửa lịch hẹn':
             slots = {
-                "AccountFBMakeAppointment": "Tài khoản này",
+                "AccountFBMakeAppointment": AccountFBMakeAppointment,
                 "Appointment": Appointment,
                 "ChangeType": None,
                 "Confirmation": None,
                 "Date": None,
-                "DateOfBird": None,
+                "DateOfBird": DateOfBird,
                 "Doctor": None,
-                "Name": None,
-                "PhoneNumber": None,
+                "Name": name,
+                "PhoneNumber": PhoneNumber,
                 "Speciality": None,
                 "Time": None
             }
@@ -698,12 +861,12 @@ def check_appointment(intent_request):
                     build_options('ChangeType', None, None, None, None, psid, None, None, None))
             )
         elif HospitalService == 'Hủy lịch hẹn':
-            slots = {"AccountFBMakeAppointment": "Tài khoản này",
+            slots = {"AccountFBMakeAppointment": AccountFBMakeAppointment,
                      "Appointment": Appointment,
                      "Confirmation": None,
-                     "DateOfBird": None,
-                     "Name": None,
-                     "PhoneNumber": None}
+                     "DateOfBird": DateOfBird,
+                     "Name": name,
+                     "PhoneNumber": PhoneNumber}
             return elicit_slot(
                 output_session_attributes,
                 'VietnameseCancelAppointment',

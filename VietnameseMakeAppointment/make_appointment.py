@@ -58,7 +58,7 @@ xxx = {
     "DiseaseTwo": None,
     "Doctor": "Nguyễn Thị Ngọc Dung",
     "FormattedDate": "1",
-    "Name": "văn an",
+    "Name": None,
     "PhoneNumber": None,
     "Speciality": "Khoa Nhi và Nhi sơ sinh",
     "Time": "08:00",
@@ -1033,7 +1033,7 @@ def make_appointment(intent_request):
         'sessionAttributes'] if intent_request[
             'sessionAttributes'] is not None else {}
     psid = "2768186586569088"
-    # psid="2872158819534978"
+    #psid="2872158819534978"
     try:
         psid = intent_request['requestAttributes']['x-amz-lex:user-id']
     except Exception as error:
@@ -1423,6 +1423,7 @@ def make_appointment(intent_request):
                     UpdateSlot = None
                 options = build_options(
                     'name', speciality, doctor, date, time, psid)
+                # nếu tài khoản fb này đã từng đặt lịch hẹn thì xuất ra tên bệnh nhân đã từng khám, ngược lại thì chuyển về delegate cho Lex xử lý
                 if len(options) > 1:
                     return elicit_slot(
                         output_session_attributes,
@@ -1448,6 +1449,9 @@ def make_appointment(intent_request):
                     cursor.execute(
                         "SELECT a.patient_name,a.date_of_birth,a.phone_number FROM appointment_schedule as a where a.patient_name ilike '{}' and a.psid='{}';".format(name, psid))
                     record = cursor.fetchone()
+                    count=cursor.rowcount
+                    if count==0:
+                        return delegate(output_session_attributes, slots)
                     name = record[0]
                     DateOfBird = record[1].strftime('%Y-%m-%d')
                     PhoneNumber = record[2]
@@ -1523,19 +1527,21 @@ def make_appointment(intent_request):
                         "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
                     #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
                     cursor = connection.cursor()
-                    # Print PostgreSQL Connection properties
-                    #print ( connection.get_dsn_parameters(),"\n")
-
-                    # Print PostgreSQL version
-                    # postgres_insert_query = """ INSERT INTO appointment_schedule (doctor, speciality, date, time,DiseaseOne, patient_name,date_of_birth,phone_number,psid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-                    # record_to_insert = (doctor,speciality,date,time,DiseaseOne,name,DateOfBird,PhoneNumber,psid)
+                    select_query = "SELECT * FROM appointment_schedule as a where a.doctor='{}' and a.speciality='{}' and a.patient_name ilike '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(doctor,speciality,name,DateOfBird,PhoneNumber)
+                    cursor.execute(select_query)
+                    count = cursor.rowcount
+                    if count!=0:
+                        return close2(
+                            output_session_attributes,
+                            'Fulfilled',
+                            {
+                                'contentType': 'PlainText',
+                                'content': 'Đã có một lịch hẹn khác với bác sĩ {} của khoa {} được đặt cho bệnh nhân {} mà chưa tới ngày hẹn cho nên bạn không thể đặt hẹn mới. Nếu muốn đặt hẹn mới cho bệnh nhân này thì bạn vui lòng hủy lịch hẹn cũ.'.format(doctor,speciality,name)
+                            })
                     postgres_insert_query = """ INSERT INTO appointment_schedule (doctor, speciality, date, time, patient_name,date_of_birth,phone_number,psid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
                     record_to_insert = (
                         doctor, speciality, date, time, name, DateOfBird, PhoneNumber, psid)
-                    #working_hour_id, date, time, patient_name,date_of_birth,phone_number
-                    #name,DateOfBird,PhoneNumber, doctor,speciality, time, date, DiseaseOne
                     cursor.execute(postgres_insert_query, record_to_insert)
-
                     connection.commit()
                     count = cursor.rowcount
                     if count == 0:

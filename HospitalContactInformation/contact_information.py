@@ -164,7 +164,7 @@ def delegate(session_attributes, slots):
     }
 
 
-def build_response_card(title, subtitle, options, imageUrl, attachmentLinkUrl):
+def build_response_card(title, subtitle, options):
     """
     Build a responseCard with a title, subtitle, and an optional set of options which should be displayed as buttons.
     """
@@ -173,10 +173,6 @@ def build_response_card(title, subtitle, options, imageUrl, attachmentLinkUrl):
     if options is not None:
         buttons = []
         genericAttachmentElement = {}
-        if not attachmentLinkUrl:
-            attachmentLinkUrl = "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour"
-        if not imageUrl:
-            imageUrl = "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18"
         cnt = 0
         for i in range(len(options)):
             buttons.append(options[i])
@@ -185,8 +181,6 @@ def build_response_card(title, subtitle, options, imageUrl, attachmentLinkUrl):
                 genericAttachmentElement = {
                     'title': title,
                     'subTitle': subtitle,
-                    "imageUrl": imageUrl,
-                    "attachmentLinkUrl": attachmentLinkUrl,
                     'buttons': buttons
                 }
                 genericAttachments.append(genericAttachmentElement)
@@ -686,7 +680,7 @@ def contact_information(intent_request):
             )
         elif HospitalService == 'Chỉnh sửa lịch hẹn':
             slots = {
-                "AccountFBMakeAppointment": None,
+                "AccountFBMakeAppointment": "Tài khoản này",
                 "Appointment": None,
                 "ChangeType": None,
                 "Confirmation": None,
@@ -698,102 +692,85 @@ def contact_information(intent_request):
                 "Speciality": None,
                 "Time": None
             }
-            return elicit_slot(
-                output_session_attributes,
-                'VietnameseUpdateAppointment',
-                slots,
-                'AccountFBMakeAppointment', {
-                    'contentType': 'PlainText',
-                    'content': 'Bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác? :D'
-                },
-                build_response_card(
-                    'Tài khoản Facebook đã dùng để đặt lịch',
-                    'Mời bạn chọn loại tài khoản',
-                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None), None, None)
-            )
+            options=build_options('Appointment', None, None, None, None, psid, None, None, None)
+            if len(options)==0:
+                    slots['AccountFBMakeAppointment'] = "Tài khoản khác"
+                    return elicit_slot(
+                        output_session_attributes,
+                        "VietnameseUpdateAppointment",
+                        slots,
+                        'Name',
+                        {
+                            'contentType': 'PlainText',
+                            'content': 'Vì trước đây bạn chưa từng đặt hẹn bằng tài khoản này nên tôi cần thêm thông tin của bệnh nhân. Cho tôi xin họ và tên của bệnh nhân ạ?'
+                        },
+                        None)
+            else:
+                return elicit_slot(
+                    output_session_attributes,
+                    "VietnameseUpdateAppointment",
+                    slots, 'Appointment', {
+                        'contentType': 'PlainText',
+                        'content': 'Đây là các lịch được đặt bởi tài khoản facebook này. Không biết bạn muốn thay đổi lịch hẹn với bác sĩ nào ạ?'
+                    },
+                    build_response_card(
+                        'Bạn có các lịch hẹn với các bác sĩ sau đây',
+                        'Mời bạn chọn lịch hẹn muốn được cập nhật',
+                        options))
         elif HospitalService == 'Hủy lịch hẹn':
-            slots = {"AccountFBMakeAppointment": None,
+            slots = {"AccountFBMakeAppointment": "Tài khoản này",
                      "Appointment": None,
                      "Confirmation": None,
                      "DateOfBird": None,
                      "Name": None,
                      "PhoneNumber": None}
+            options=build_options('Appointment', None, None, None, None, psid, None, None, None)
+            if options==None:
+                slots['AccountFBMakeAppointment'] = "Tài khoản khác"
+                return elicit_slot(
+                    output_session_attributes,
+                    "VietnameseCancelAppointment",
+                    slots,
+                    'Name',
+                    {
+                        'contentType': 'PlainText',
+                        'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết họ và tên của bệnh nhân'
+                    },
+                    None)
+            else:
+                return elicit_slot(
+                    output_session_attributes,
+                    "VietnameseCancelAppointment",
+                    slots, 'Appointment', {
+                        'contentType': 'PlainText',
+                        'content': 'Chào {}! Đây là các lịch được đặt bởi tài khoản facebook này. Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ? :D'.format(fb_first_name)
+                    },
+                    build_response_card(
+                        'Bạn có các lịch hẹn với các bác sĩ sau đây',
+                        'Mời bạn chọn lịch hẹn muốn hủy',
+                        options))
+        elif HospitalService == 'Xem lịch hẹn':
+            slots = {
+                "AccountFBMakeAppointment": None,
+                "Appointment": None,
+                "DateOfBird": None,
+                "HospitalService": None,
+                "Name": None,
+                "PhoneNumber": None
+            }
             return elicit_slot(
                 output_session_attributes,
-                'VietnameseCancelAppointment',
+                "VietnameseCheckAppointment",
                 slots,
-                'AccountFBMakeAppointment', {
+                'AccountFBMakeAppointment',
+                {
                     'contentType': 'PlainText',
-                    'content': 'Bây giờ cho tôi biết bạn đã đặt lịch hẹn đó bởi tài khoản facebook này hay tài khoản khác? :)'
+                    'content': ':) Bạn muốn xem lịch hẹn được đặt bởi tài khoản facebook này hay tài khoản khác ạ?  ;)'
                 },
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
                     'Mời bạn chọn loại tài khoản',
-                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None), None, None)
-            )
-        elif HospitalService == 'Xem lịch hẹn':
-            slots = {
-                "Appointment": None,
-                "HospitalService": None
-            }
-            try:
-                connection = psycopg2.connect(
-                    "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
-                # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
-
-                cursor = connection.cursor()
-                # Print PostgreSQL Connection properties
-                print(connection.get_dsn_parameters(), "\n")
-
-                # Print PostgreSQL version
-                cursor.execute(
-                    "SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' order by a.date;".format(psid))
-                records = cursor.fetchall()
-            except (Exception, psycopg2.Error) as error:
-                print("Error while connecting to PostgreSQL", error)
-            finally:
-                # closing database connection.
-                if(connection):
-                    cursor.close()
-                    connection.close()
-                    print("PostgreSQL connection is closed")
-            options = []
-            set_doctor = set()
-            if len(records) == 0:
-                return None
-            for row in records:
-                # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
-                str_value = row[1]
-                date_of_appointment = row[2]
-                if date_of_appointment >= datetime.date.today():
-                    if(str_value in set_doctor):
-                        continue
-                    set_doctor.add(str_value)
-                    temp = ({
-                        'text': str_value,
-                        'value': str_value})
-                    options.append(temp)
-            message = "Các lịch hẹn:"
-            for row in records:
-                date_of_appointment = row[2]
-                if date_of_appointment >= datetime.date.today():
-                    element = " Bác sĩ {} của {} lúc {} ngày {},".format(
-                        row[1], row[0], row[3].strftime("%H:%M"), row[2].strftime("%d/%m/%Y"))
-                    message = message+element
-            message = message[0: -1]
-            return elicit_slot(
-                output_session_attributes,
-                'VietnameseCheckAppointment',
-                slots,
-                'Appointment', {
-                    'contentType': 'PlainText',
-                    'content': message
-                },
-                build_response_card(
-                    'Bạn muốn thay đổi thông tin với bác sĩ nào?',
-                    'Bạn có các lịch hẹn với các bác sĩ sau đây:',
-                    options, None, None)
-            )
+                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None)))
         elif HospitalService == 'Xem thông tin bệnh viện':
             slots = {
                 "HospitalService": None,
@@ -805,7 +782,7 @@ def contact_information(intent_request):
                 slots,
                 'Information', {
                     'contentType': 'PlainText',
-                    'content': 'Dạ, bạn cần tìm hiểu thông tin về vấn đề gì ạ? <3'
+                    'content': 'Bạn cần tìm hiểu thông tin về vấn đề gì ạ? ;)'
                 },
                 build_response_card(
                     'Thông tin về bệnh viện',

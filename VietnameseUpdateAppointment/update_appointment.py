@@ -946,24 +946,6 @@ def update_appointment(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
-        # validation_result = validate_book_appointment(appointment_type, date, appointment_time)
-        # if not validation_result['isValid']:
-        #     slots[validation_result['violatedSlot']] = None
-        #     return elicit_slot(
-        #         output_session_attributes,
-        #         intent_request['currentIntent']['name'],
-        #         slots,
-        #         validation_result['violatedSlot'],
-        #         validation_result['message'],
-        #         build_response_card(
-        #             'Specify {}'.format(validation_result['violatedSlot']),
-        #             validation_result['message']['content'],
-        #             build_options(validation_result['violatedSlot'], appointment_type, date, booking_map)
-        #         )
-        #     )
-        # https://graph.facebook.com/2768186586569088?fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=EAACtffPGBe4BAGvNefOdwJDnB8s2wZAQgNlEBJZCfxgbdZC8ktRuB3NGTIPBR47QDc5KDwa9w3osAbZAnpWQNQneMr4v4SbBauZAjgx06x1xZCZA2dSPFV1rBa1dhnkRcrSM8sgKL5ZAtM20Ww3mnD11jWYweE41x5a8HjkDISWyUFF2TyzhORj5
-        # if Appointment and (not name or not DateOfBird or not PhoneNumber):
-        #     return delegate(output_session_attributes, slots)
         if AccountFBMakeAppointment==None:
             AccountFBMakeAppointment = "Tài khoản này"
             slots['AccountFBMakeAppointment'] = "Tài khoản này"

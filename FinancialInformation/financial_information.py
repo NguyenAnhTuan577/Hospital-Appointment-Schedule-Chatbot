@@ -21,6 +21,7 @@ import sys
 import urllib.parse as up
 from datetime import timedelta
 import urllib3
+from random import randint
 
 
 sys.path.insert(0, '/psycopg2')
@@ -164,7 +165,7 @@ def delegate(session_attributes, slots):
     }
 
 
-def build_response_card(title, subtitle, options):
+def build_response_card(title, subtitle, options, imageUrl, attachmentLinkUrl):
     """
     Build a responseCard with a title, subtitle, and an optional set of options which should be displayed as buttons.
     """
@@ -173,6 +174,10 @@ def build_response_card(title, subtitle, options):
     if options is not None:
         buttons = []
         genericAttachmentElement = {}
+        if not attachmentLinkUrl:
+            attachmentLinkUrl = "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour"
+        if not imageUrl:
+            imageUrl = "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18"
         cnt = 0
         for i in range(len(options)):
             buttons.append(options[i])
@@ -181,12 +186,13 @@ def build_response_card(title, subtitle, options):
                 genericAttachmentElement = {
                     'title': title,
                     'subTitle': subtitle,
+                    "imageUrl": imageUrl,
+                    "attachmentLinkUrl": attachmentLinkUrl,
                     'buttons': buttons
                 }
                 genericAttachments.append(genericAttachmentElement)
                 cnt = 0
                 buttons = []
-
     return {
         'contentType':
         'application/vnd.amazonaws.card.generic',
@@ -194,41 +200,6 @@ def build_response_card(title, subtitle, options):
         1,
         'genericAttachments': genericAttachments
     }
-
-    # return
-    #   {
-    #     "attachmentLinkUrl": None,
-    #     "buttons": [
-    #       {
-    #         "text": "Nam",
-    #         "value": "Nam"
-    #       },
-    #       {
-    #         "text": "Nữ",
-    #         "value": "Nữ"
-    #       }
-    #     ],
-    #     "imageUrl": None,
-    #     "subTitle": None,
-    #     "title": "Giới tính của bạn là gì?"
-    #   },
-    #   {
-    #     "attachmentLinkUrl": None,
-    #     "buttons": [
-    #       {
-    #         "text": "nam1",
-    #         "value": "Nam"
-    #       },
-    #       {
-    #         "text": "nu1",
-    #         "value": "Nữ"
-    #       }
-    #     ],
-    #     "imageUrl": None,
-    #     "subTitle": None,
-    #     "title": "Giới tính của bạn là gì?"
-    #   }
-    # }
 
 
 """ --- Helper Functions --- """
@@ -639,8 +610,14 @@ def financial_information(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
+        value = randint(1, 3)
         if not HospitalService:
-            message = "<3 Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
+            if value==1:
+                message = "<3 Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin chi tiết."
+            elif value==2:
+                message="Viện phí tại bệnh viên chúng tôi khá là hợp lí so với chất lượng của bệnh viện. Bạn có thể gọi đến số 02854113333 để được tư vấn kĩ hơn hoặc BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về viện phí"
+            else:
+                message="Viện phí của chúng tôi rất tốt so với mặt bằng các bệnh viên quốc tế, ngoài ra bệnh viện chúng tôi còn chấp nhật bảo hiểm y tế của nhiều công ty. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về viện phí"
             imageUrl = "https://www.hoanmydongnai.com/upload/hoanmydongnai.com/images/service/2019-05-14/detail_1557819248_8ZfOSJvAeJ.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/thong-tin-danh-cho-benh-nhan/thong-tin-vien-phi/"
             options = build_options(
@@ -721,7 +698,7 @@ def financial_information(intent_request):
                     build_response_card(
                         'Bạn có các lịch hẹn với các bác sĩ sau đây',
                         'Mời bạn chọn lịch hẹn muốn được cập nhật',
-                        options))
+                        options,None,None))
         elif HospitalService == 'Hủy lịch hẹn':
             slots = {"AccountFBMakeAppointment": "Tài khoản này",
                      "Appointment": None,
@@ -753,7 +730,7 @@ def financial_information(intent_request):
                     build_response_card(
                         'Bạn có các lịch hẹn với các bác sĩ sau đây',
                         'Mời bạn chọn lịch hẹn muốn hủy',
-                        options))
+                        options,None,None))
         elif HospitalService == 'Xem lịch hẹn':
             slots = {
                 "AccountFBMakeAppointment": None,
@@ -775,7 +752,7 @@ def financial_information(intent_request):
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
                     'Mời bạn chọn loại tài khoản',
-                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None)))
+                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None),None,None))
         elif HospitalService == 'Xem thông tin bệnh viện':
             slots = {
                 "HospitalService": None,

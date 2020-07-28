@@ -22,6 +22,7 @@ import urllib.parse as up
 from datetime import timedelta
 #from datetime import datetime
 import urllib3
+import re
 
 sys.path.insert(0, '/psycopg2')
 up.uses_netloc.append("postgres")
@@ -52,16 +53,16 @@ xxx = {
         "name": "VietnameseMakeAppointment",
         "slots": {
             "Confirmation": None,
-    "Date": "2020-07-21",
+    "Date": None,
     "DateOfBird": None,
     "DiseaseOne": None,
     "DiseaseTwo": None,
-    "Doctor": "Nguyễn Thị Ngọc Dung",
-    "FormattedDate": "1",
+    "Doctor": "thảo",
+    "FormattedDate": None,
     "Name": None,
     "PhoneNumber": None,
-    "Speciality": "Khoa Nhi và Nhi sơ sinh",
-    "Time": "08:00",
+    "Speciality": "Trung Tâm Điều Trị Ung Thư Hy Vọng",
+    "Time": None,
     "UpdateSlot": None
         }
     },
@@ -838,8 +839,9 @@ def build_options(slot, speciality, doctor, date, time, psid):
                     # so sánh
                     #print('so luong lich da dat: ', booked)
                     #print('count:', cnt)
+                    day_strings_vn=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật']
                     if booked < cnt:
-                        options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings[potential_date.weekday()]),
+                        options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings_vn[potential_date.weekday()]),
                                         'value': potential_date.strftime('%Y-%d-%m')})
                         # print('hi')
                     if len(records) == 0:
@@ -996,6 +998,14 @@ def build_options(slot, speciality, doctor, date, time, psid):
             'text': "Không",
             'value': "Không"}]
         return res
+    elif slot == 'UpdateInfor':
+        res = [{
+            'text': "Có",
+            'value': "Có"},
+            {
+            'text': "Không",
+            'value': "Không"}]
+        return res
 
 
 """ --- Functions that control the bot's behavior --- """
@@ -1027,6 +1037,7 @@ def make_appointment(intent_request):
     FormattedDate = intent_request['currentIntent']['slots']['FormattedDate']
     # UpdateSlot thể hiện slot cần được thay đổi khi tất cả các thông tin khoa, bác sĩ, ngày giờ được chọn không tồn tại
     UpdateSlot = intent_request['currentIntent']['slots']['UpdateSlot']
+    UpdateInfor = intent_request['currentIntent']['slots']['UpdateInfor']
     Confirmation = intent_request['currentIntent']['slots']['Confirmation']
     source = intent_request['invocationSource']
     output_session_attributes = intent_request[
@@ -1053,24 +1064,15 @@ def make_appointment(intent_request):
     fb_last_name = data['last_name']
     print('name= ', fb_name)
     if source == 'DialogCodeHook':
-        # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
-        # validation_result = validate_book_appointment(appointment_type, date, appointment_time)
-        # if not validation_result['isValid']:
-        #     slots[validation_result['violatedSlot']] = None
-        #     return elicit_slot(
-        #         output_session_attributes,
-        #         intent_request['currentIntent']['name'],
-        #         slots,
-        #         validation_result['violatedSlot'],
-        #         validation_result['message'],
-        #         build_response_card(
-        #             'Specify {}'.format(validation_result['violatedSlot']),
-        #             validation_result['message']['content'],
-        #             build_options(validation_result['violatedSlot'], appointment_type, date, booking_map)
-        #         )
-        #     )
-        ####################################
+        if doctor=='Kết thúc':
+            return close2(
+                output_session_attributes,
+                'Fulfilled',
+                {
+                    'contentType': 'PlainText',
+                    'content': 'Bạn có thể tham khảo thêm các hỗ trợ khác của chatbot ở đây:'
+                })
         if time:
             arr_time = time.split(':')
             if arr_time[1] != '00' and arr_time[1] != '30':
@@ -1316,14 +1318,14 @@ def make_appointment(intent_request):
                 UpdateSlot = None
                 if options == None:
                     slots['Doctor'] = None
-                    temp = doctor
+                    doctor_temp = doctor
                     doctor = None
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
                         slots, 'Doctor', {
                             'contentType': 'PlainText',
-                            'content': '{} không có bác sĩ tên {}'.format(speciality, doctor)
+                            'content': '{} không có bác sĩ {}'.format(speciality, doctor_temp)
                         },
                         build_response_card(
                             'Các bác sĩ hiện có của {}'.format(speciality),
@@ -1342,21 +1344,22 @@ def make_appointment(intent_request):
                             'Mời bạn chọn ngày khám bệnh',
                             options, None))
             elif not time:
+                if datetime.datetime.strptime(date, '%Y-%m-%d').date()  < datetime.date.today():
+                    print("Date invalid")
+                    slots['Date']=None
+                    slots['FormattedDate']=None
+                    options = build_options('Date', speciality, doctor, date, time, None)
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'Date', {
+                            'contentType': 'PlainText',
+                            'content': 'Ngày khám không hợp lệ, mời bạn nhập lại NGÀY muốn khám bệnh?'
+                        }, build_response_card(
+                            '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
+                            'Mời bạn chọn ngày khám bệnh',
+                            options, None))
                 arr_date = date.split('-')
-                # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
-                # print(intent_request['currentIntent']['slots'])
-                # if int(arr_date[2])<13:
-                #     arr_date[1], arr_date[2]=arr_date[2],arr_date[1]
-                # date=arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
-                # fix bug loi format 4/5/2020->4/5/2021
-                # today = datetime.date.today()
-                # print('today:',today)
-                # if int(arr_date[0])==today.year+1:
-                #     print(today.year+1)
-                #     if today.month<int(arr_date[1]) or (today.month==int(arr_date[1]) and today.day<int(arr_date[2])):
-                #         arr_date[0]=str(today.year)
-                # date=arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
-                # print('date',date)
                 date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
                 # slots['Date']=date
                 # end fix bug
@@ -1494,14 +1497,27 @@ def make_appointment(intent_request):
                     arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
                 DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
                 slots['DateOfBird'] = DateOfBird
-                return elicit_slot(
-                    output_session_attributes,
-                    intent_request['currentIntent']['name'],
-                    slots, 'PhoneNumber', {
-                        'contentType': 'PlainText',
-                        'content': 'Bây giờ tôi cần biết số điện thoại để liên lạc với bệnh nhân?'
-                    }, None)
+                if datetime.datetime.strptime(DateOfBird, '%Y-%m-%d').date()  >= datetime.date.today():
+                    print("DateOfBird invalid")
+                    slots['DateOfBird']=None
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'DateOfBird', {
+                            'contentType': 'PlainText',
+                            'content': 'Ngày tháng năm sinh không hợp lệ, mời bạn nhập lại NGÀY THÁNG NĂM SINH?'
+                        }, None)
             elif not Confirmation:
+                regex= "(03|07|08|09|01[2|6|8|9])+([0-9]{8})\\b"
+                if not re.search(regex, PhoneNumber):
+                    slots['PhoneNumber']=None
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'PhoneNumber', {
+                            'contentType': 'PlainText',
+                            'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
+                        }, None)
                 options = build_options(
                     'Confirmation', speciality, doctor, date, time, None)
                 arr_date = date.split('-')
@@ -1550,7 +1566,7 @@ def make_appointment(intent_request):
                             'Fulfilled',
                             {
                                 'contentType': 'PlainText',
-                                'content': 'Thêm lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
+                                'content': 'Thêm lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ trợ khác của chat bot.'
                             }
                         )
                     print(count, "Record inserted successfully into mobile table")
@@ -1569,115 +1585,49 @@ def make_appointment(intent_request):
                 )
             elif Confirmation == "Không":
                 # không lưu lịch hẹn
-                return close2(
-                    output_session_attributes,
-                    'Fulfilled',
-                    {
-                        'contentType': 'PlainText',
-                        'content': 'Thông tin lịch hẹn bạn không được lưu. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
-                    }
-                )
-
-        # if appointment_type and not date:
-        #     return elicit_slot(
-        #         output_session_attributes,
-        #         intent_request['currentIntent']['name'],
-        #         intent_request['currentIntent']['slots'],
-        #         'Date',
-        #         {'contentType': 'PlainText', 'content': 'When would you like to schedule your {}?'.format(appointment_type)},
-        #         build_response_card(
-        #             'Specify Date',
-        #             'When would you like to schedule your {}?'.format(appointment_type),
-        #             build_options('Date', appointment_type, date, None)
-        #         )
-        #     )
-
-        # if appointment_type and date:
-        #     # Fetch or generate the availabilities for the given date.
-        #     booking_availabilities = try_ex(lambda: booking_map[date])
-        #     if booking_availabilities is None:
-        #         booking_availabilities = get_availabilities(date)
-        #         booking_map[date] = booking_availabilities
-        #         output_session_attributes['bookingMap'] = json.dumps(booking_map)
-
-        #     appointment_type_availabilities = get_availabilities_for_duration(get_duration(appointment_type), booking_availabilities)
-        #     if len(appointment_type_availabilities) == 0:
-        #         # No availability on this day at all; ask for a new date and time.
-        #         slots['Date'] = None
-        #         slots['Time'] = None
-        #         return elicit_slot(
-        #             output_session_attributes,
-        #             intent_request['currentIntent']['name'],
-        #             slots,
-        #             'Date',
-        #             {'contentType': 'PlainText', 'content': 'We do not have any availability on that date, is there another day which works for you?'},
-        #             build_response_card(
-        #                 'Specify Date',
-        #                 'What day works best for you?',
-        #                 build_options('Date', appointment_type, date, booking_map)
-        #             )
-        #         )
-
-        #     message_content = 'What time on {} works for you? '.format(date)
-        #     if appointment_time:
-        #         output_session_attributes['formattedTime'] = build_time_output_string(appointment_time)
-        #         # Validate that proposed time for the appointment can be booked by first fetching the availabilities for the given day.  To
-        #         # give consistent behavior in the sample, this is stored in sessionAttributes after the first lookup.
-        #         if is_available(appointment_time, get_duration(appointment_type), booking_availabilities):
-        #             return delegate(output_session_attributes, slots)
-        #         message_content = 'The time you requested is not available. '
-
-        #     if len(appointment_type_availabilities) == 1:
-        #         # If there is only one availability on the given date, try to confirm it.
-        #         slots['Time'] = appointment_type_availabilities[0]
-        #         return confirm_intent(
-        #             output_session_attributes,
-        #             intent_request['currentIntent']['name'],
-        #             slots,
-        #             {
-        #                 'contentType': 'PlainText',
-        #                 'content': '{}{} is our only availability, does that work for you?'.format
-        #                            (message_content, build_time_output_string(appointment_type_availabilities[0]))
-        #             },
-        #             build_response_card(
-        #                 'Confirm Appointment',
-        #                 'Is {} on {} okay?'.format(build_time_output_string(appointment_type_availabilities[0]), date),
-        #                 [{'text': 'yes', 'value': 'yes'}, {'text': 'no', 'value': 'no'}]
-        #             )
-        #         )
-
-        #     available_time_string = build_available_time_string(appointment_type_availabilities)
-        #     return elicit_slot(
-        #         output_session_attributes,
-        #         intent_request['currentIntent']['name'],
-        #         slots,
-        #         'Time',
-        #         {'contentType': 'PlainText', 'content': '{}{}'.format(message_content, available_time_string)},
-        #         build_response_card(
-        #             'Specify Time',
-        #             'What time works best for you?',
-        #             build_options('Time', appointment_type, date, booking_map)
-        #         )
-        #     )
-
+                if UpdateInfor=='Không':
+                    return close2(
+                        output_session_attributes,
+                        'Fulfilled',
+                        {
+                            'contentType': 'PlainText',
+                            'content': 'Thông tin lịch hẹn của bạn không được lưu. Bạn có thể tham khảo các dịch vụ hỗ  trợ khác của chat bot.'
+                        }
+                    )
+                elif UpdateInfor=="Có":
+                    slots['Name'] = None
+                    slots['DateOfBird'] = None
+                    slots['PhoneNumber'] = None
+                    slots['Confirmation']=None
+                    slots['UpdateInfor']=None
+                    options = build_options('name', speciality, doctor, date, time, psid)
+                    if len(options) > 1:
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'Name', {
+                                'contentType': 'PlainText',
+                                'content': 'Cho mình xin TÊN của bệnh nhân ạ?'
+                            },
+                            build_response_card(
+                                'Danh sách các bệnh nhân đã được đặt lịch hẹn bằng tài khoản Facebook này',
+                                'Mời bạn chọn tên bệnh nhân',
+                                options, None))
+                    else:
+                        return delegate(output_session_attributes, slots) 
+                else:
+                    options = build_options('UpdateInfor', None, None, None, None, None)
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'UpdateInfor', {
+                            'contentType': 'PlainText',
+                            'content': 'Bạn có muốn thay đổi thông tin bệnh nhân vừa nhập không ạ?'
+                        }, build_response_card(
+                        'Thay đổi thông tin bệnh nhận hoặc không đặt hẹn nữa',
+                        'Lựa chọn dành cho bạn',
+                        options, 'https://is1-ssl.mzstatic.com/image/thumb/Purple118/v4/d6/d3/c5/d6d3c5f5-681e-47ef-b5a9-7684ebb2609f/source/512x512bb.jpg'))
         return delegate(output_session_attributes, slots)
-
-    # Book the appointment.  In a real bot, this would likely involve a call to a backend service.
-    # duration = get_duration(appointment_type)
-    # booking_availabilities = booking_map[date]
-    # if booking_availabilities:
-    #     # Remove the availability slot for the given date as it has now been booked.
-    #     booking_availabilities.remove(appointment_time)
-    #     if duration == 60:
-    #         second_half_hour_time = increment_time_by_thirty_mins(appointment_time)
-    #         booking_availabilities.remove(second_half_hour_time)
-
-    #     booking_map[date] = booking_availabilities
-    #     output_session_attributes['bookingMap'] = json.dumps(booking_map)
-    # else:
-    #     # This is not treated as an error as this code sample supports functionality either as fulfillment or dialog code hook.
-    #     logger.debug('Availabilities for {} were null at fulfillment time.  '
-    #                  'This should have been initialized if this function was configured as the dialog code hook'.format(date))
     arr_date = date.split('-')
     date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
     arr_date_of_bird = DateOfBird.split('-')

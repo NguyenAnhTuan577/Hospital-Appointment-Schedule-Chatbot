@@ -157,8 +157,8 @@ def close2(session_attributes, fulfillment_state, message):
                     {
                         "title": "Các dịch vụ hỗ trợ của Chatbot",
                         "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
-                        "imageUrl": "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18",
-                        "attachmentLinkUrl": "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour",
+                        "imageUrl": "https://moitruong.net.vn/wp-content/uploads/2019/08/bo-y-te-ly-giai-ve-gia-giuong-dich-vu-4-trieu-dong-ngay-ngang-khach-san-hang-sang-hinh-anh0556686901.jpg",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
                         "buttons": [
                             {
                                 "text": "Lấy lịch hẹn",
@@ -172,11 +172,24 @@ def close2(session_attributes, fulfillment_state, message):
                                 "text": "Hủy lịch hẹn",
                                 "value": "hủy hẹn"
                             }]
+                    },{
+                        "title": "Các dịch vụ hỗ trợ của Chatbot",
+                        "subTitle": "Bạn muốn được hỗ trợ dịch vụ nào?",
+                        "imageUrl": "https://moitruong.net.vn/wp-content/uploads/2019/08/bo-y-te-ly-giai-ve-gia-giuong-dich-vu-4-trieu-dong-ngay-ngang-khach-san-hang-sang-hinh-anh0556686901.jpg",
+                        "attachmentLinkUrl": "https://www.fvhospital.com/vi/trang-chu/",
+                        "buttons": [
+                            {
+                                "text": "Xem lịch hẹn",
+                                "value": "xem lịch hẹn"
+                            },
+                            {
+                                "text": "Xem thông tin bệnh viện",
+                                "value": "Xem thông tin bệnh viện"
+                            }]
                     }]
             }
         }
     }
-
     return response
 
 
@@ -568,7 +581,10 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                     'text': i,
                     'value': i})
             res.append(temp)
-        print(res)
+        temp = ({
+                'text': 'Kết thúc',
+                'value': 'Kết thúc'})
+        res.append(temp)
         return res
     elif slot == 'ChangeType':
         res = [{'text': 'Bác sĩ', 'value': 'Bác sĩ'}, {
@@ -623,8 +639,15 @@ def check_appointment(intent_request):
     fb_last_name = data['last_name']
     print('name= ', fb_name)
     if source == 'DialogCodeHook':
-        # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
+        if HospitalService=='Không làm gì cả' or Appointment=='Kết thúc':
+            return close2(
+                output_session_attributes,
+                'Fulfilled',
+                {
+                    'contentType': 'PlainText',
+                    'content': 'Bạn có thể tham khảo thêm các hỗ trợ khác của chatbot ở đây:'
+                })
         if not AccountFBMakeAppointment:
             # AccountFBMakeAppointment = "Tài khoản này"
             # slots['AccountFBMakeAppointment'] = "Tài khoản này"
@@ -666,7 +689,7 @@ def check_appointment(intent_request):
                         'content': 'Dạ, Họ tên của bệnh nhân là gì ạ?'
                     },
                     None)
-            if not DateOfBird:
+            elif not DateOfBird:
                 return elicit_slot(
                     output_session_attributes,
                     intent_request['currentIntent']['name'],
@@ -674,10 +697,10 @@ def check_appointment(intent_request):
                     'DateOfBird',
                     {
                         'contentType': 'PlainText',
-                        'content': 'Bây giờ tôi cần biết ngày sinh của bệnh nhân?'
+                        'content': 'Bây giờ tôi cần biết thêm NGÀY THÁNG NĂM SINH của bệnh nhân {}?'.format(name)
                     },
                     None)
-            if not PhoneNumber:
+            elif not PhoneNumber:
                 # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
                 print(intent_request['currentIntent']['slots'])
                 arr_date = DateOfBird.split('-')
@@ -685,13 +708,34 @@ def check_appointment(intent_request):
                     arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
                 DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
                 slots['DateOfBird'] = DateOfBird
+                if datetime.datetime.strptime(DateOfBird, '%Y-%m-%d').date()  >= datetime.date.today():
+                            print("DateOfBird invalid")
+                            slots['DateOfBird']=None
+                            return elicit_slot(
+                                output_session_attributes,
+                                intent_request['currentIntent']['name'],
+                                slots, 'DateOfBird', {
+                                    'contentType': 'PlainText',
+                                    'content': 'Ngày tháng năm sinh không hợp lệ, mời bạn nhập lại NGÀY THÁNG NĂM SINH?'
+                                }, None)
                 return elicit_slot(
                     output_session_attributes,
                     intent_request['currentIntent']['name'],
                     slots, 'PhoneNumber', {
                         'contentType': 'PlainText',
-                        'content': 'Bây giờ cho tôi xin số điện thoại đã đặt lịch hẹn? ^_^'
+                        'content': 'Tôi chỉ cần biết SỐ ĐIỆN THOẠI đã đặt lịch hẹn nữa thôi? ^_^'
                     }, None)
+            else:
+                regex= "(03|07|08|09|01[2|6|8|9])+([0-9]{8})\\b"
+                if not re.search(regex, PhoneNumber):
+                    slots['PhoneNumber']=None
+                    return elicit_slot(
+                        output_session_attributes,
+                        intent_request['currentIntent']['name'],
+                        slots, 'PhoneNumber', {
+                            'contentType': 'PlainText',
+                            'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
+                        }, None)
             options=build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber)
             if options==None:
                 slots['Name'] = None
@@ -729,7 +773,7 @@ def check_appointment(intent_request):
                     print("PostgreSQL connection is closed")
             options = []
             set_doctor = set()
-            if cursor.rowcount == 0:
+            if cursor.rowcount == 0:#đã chặn các trường hợp ko có lịch hẹn xử lý ở trên
                 return None
             for row in records:
                 # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
@@ -743,11 +787,10 @@ def check_appointment(intent_request):
                         'text': str_value,
                         'value': str_value})
                     options.append(temp)
-            # for i in set_doctor:
-            #     temp = ({
-            #             'text': i,
-            #             'value': i})
-            #     options.append(temp)
+            temp = ({
+                    'text': 'Kết thúc',
+                    'value': 'Kết thúc'})
+            options.append(temp)
             message = "Đây là các lịch hẹn hiện có của bạn: <3"
             for row in records:
                 date_of_appointment = row[2]
@@ -788,12 +831,16 @@ def check_appointment(intent_request):
                     options=build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber)
                     if options==None:#đã xử lý từ trước nên options ở trong này không bao giờ null
                         return delegate(output_session_attributes, slots)
+                    message=''
+                    if Appointment!='Khác':
+                        message=message+'Không tồn tại lịch hẹn với bác sĩ {}. '.format(Appointment)
+                    message=message+'Bạn cần thay đổi hoặc hủy lịch hẹn với bác sĩ nào ạ?'
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
                         slots, 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Không tồn tại lịch hẹn với bác sĩ {}. Bạn cần thay đổi hoặc hủy lịch hẹn với bác sĩ nào ạ?'.format(Appointment)
+                            'content': message
                         },
                         build_response_card(
                             'Các lịch hẹn hiện có:',

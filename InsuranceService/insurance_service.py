@@ -21,7 +21,7 @@ import sys
 import urllib.parse as up
 from datetime import timedelta
 import urllib3
-
+from random import randint
 
 sys.path.insert(0, '/psycopg2')
 up.uses_netloc.append("postgres")
@@ -608,8 +608,14 @@ def insurance_service(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
+        value = randint(1, 3)
         if not InsuranceInformation:
-            message = "Cho tôi biết bạn muốn biết thông tin gì về dịch vụ bảo hiểm? <3"
+            if value==1:
+                message = "Cho tôi biết bạn muốn biết thông tin gì về dịch vụ bảo hiểm? <3 BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về bảo hiểm"
+            elif value==2:
+                message = "Bạn muốn biết thông tin nào về dịch vụ bảo hiểm? <3 BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về bảo hiểm"
+            else:
+                message = "Đâu là thông tin bạn muốn biết? <3 BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về bảo hiểm"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-HIW-thumBANNER-insurance-04-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/"
             options = build_options(
@@ -628,7 +634,12 @@ def insurance_service(intent_request):
                 }, responseCard
             )
         elif InsuranceInformation == "Các đối tác thanh toán":
-            message = "<3<3<3 Bệnh viện FV hợp tác với nhiều công ty bảo hiểm trong nước và quốc tế. Để biết danh sách các công ty, bấm vào hình bên dưới."
+            if value==1:
+                message = "<3<3<3 Bệnh viện FV hợp tác với nhiều công ty bảo hiểm trong nước và quốc tế. Để biết danh sách các công ty, BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin."
+            elif value==1:
+                message = "Tại bệnh viện của chúng tôi, bảo hiểm được hỗ trợ đến bệnh nhân một cách tối đa để giúp bệnh nhân được sử dụng chất lượng dịch vụ tốt nhất với mức giá thấp nhất. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm DANH SÁCH CÁC BẢO HIỂM được chấp nhận tại bệnh viện chúng tôi."
+            else:
+                message = "Bệnh viện của chúng tôi chấp nhận bảo hiểm của nhiều công ty bảo hiểm trong và ngoài nước, giúp bạn có nhiều lựa chọn khi chọn công ty bảo hiểm. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin."
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-ODBP-thumBANNER-insurance-01-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/cac-doi-tac-thanh-toan-truc-tiep/"
             options = build_options(
@@ -644,7 +655,12 @@ def insurance_service(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif InsuranceInformation == "Thông tin hữu ích":
-            message = "Bấm vào hình bên dưới để biết thêm một số thông tin hữu ích về dịch vụ bảo hiểm. ;)"
+            if value==1:
+                message = "BẤM VÀO HÌNH BÊN DƯỚI để biết thêm một số thông tin hữu ích về dịch vụ bảo hiểm. ;)"
+            elif value==2:
+                message = "Bạn có thể đọc thêm 1 số thông tin hữu ích về bảo hiểm tại bệnh viện chúng tôi bằng cách BẤM VÀO HÌNH BÊN DƯỚI ;)"
+            else:
+                message = "Một số thông tin hữu ích về bảo hiểm tại bệnh viện chúng tôi có tại liên kết bằng cách BẤM VÀO HÌNH BÊN DƯỚI ;)"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-II-thumBANNER-insurance-02-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/thong-tin-huu-ich/"
             options = build_options(
@@ -660,7 +676,12 @@ def insurance_service(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif InsuranceInformation == "Quy trình dịch vụ":
-            message = "Văn phòng bảo hiểm của Bệnh viện FV có thể hỗ trợ bệnh nhân các vấn đề về yêu cầu thanh toán bảo hiểm. Bấm vào hình bên dưới để tìm hiểu thêm thông tin về quy trình này."
+            if value==1:
+                message = "Bạn cần điền vào đơn đăng ký, xác nhận loại hình bảo hiểm của bạn rồi đưa thẻ bảo hiểm của bạn cho nhân viên lễ tân. Sau đó, ký giấy chấp thuận cho phép chúng tôi cung cấp thông tin sức khỏe của bạn cho công ty bảo hiểm. Mọi việc hoàn tất!"
+            elif value==2:
+                message = "Bạn cần điền vào đơn đăng ký, đưa thẻ bảo hiểm cho nhân viên lễ tân và kí giấy xác nhận. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin chi tiết."
+            else:
+                message="Đầu tiên, bạn cần điền vào đơn đăng ký, xác nhận loại hình bảo hiểm của bạn. Sau đó, đưa thẻ bảo hiểm của bạn cho nhân viên lễ tân. Cuối cùng, ký giấy chấp thuận cho phép chúng tôi cung cấp thông tin sức khỏe của bạn cho công ty bảo hiểm."
             imageUrl = "https://tamanhhospital.vn/wp-content/uploads/2016/07/HH_8535-1024x683.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/quy-trinh-dich-vu/"
             options = build_options(
@@ -676,7 +697,12 @@ def insurance_service(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif InsuranceInformation == "Chính sách":
-            message = ":) Bệnh viện FV cung cấp dịch vụ thanh toán bảo hiểm trực tiếp hoặc thanh toán tiền mặt. Bấm vào hình bên dưới để tìm hiểu thêm về các lựa chọn thanh toán hiện có tùy theo từng công ty cung cấp bảo hiểm"
+            if value==1:
+                message = ":) Bệnh viện FV cung cấp dịch vụ thanh toán bảo hiểm trực tiếp hoặc thanh toán tiền mặt đem đến nhiều lựa chọn cho khách hàng. BẤM VÀO HÌNH BÊN DƯỚI để tìm hiểu thêm về các lựa chọn thanh toán hiện có tùy theo từng công ty cung cấp bảo hiểm"
+            elif value==1:
+                message = "Bệnh viện chúng tôi đem đến những chính sách về bảo hiểm cực kỳ tốt cho bệnh nhân. BẤM VÀO HÌNH BÊN DƯỚI để tìm hiểu thêm về các lựa chọn thanh toán hiện có tùy theo từng công ty cung cấp bảo hiểm"
+            else:
+                message="Bạn có thể BẤM VÀO HÌNH BÊN DƯỚI để xem kĩ hơn thông tin về chính sách bảo hiểm tại bệnh viện chúng tôi"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-FVPolicy-thumBANNER-insurance-03-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/chinh-sach-cua-fv/"
             options = build_options(

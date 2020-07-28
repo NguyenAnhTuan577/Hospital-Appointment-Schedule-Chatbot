@@ -21,6 +21,7 @@ import sys
 import urllib.parse as up
 from datetime import timedelta
 import urllib3
+from random import randint
 
 
 sys.path.insert(0, '/psycopg2')
@@ -608,9 +609,15 @@ def hospital_information(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
+        value = randint(1, 3)
         if Information == "Liên hệ":
             slots = {"HospitalService": None}
-            message = "Bệnh viện Pháp-Việt nằm tại số 6 Nguyễn Lương Bằng, Nam Sài Gòn (Phú Mỹ Hưng), Quận 7, Tp. Hồ Chí Minh. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33"
+            if value==1:
+                message = "Chào bạn! Bệnh viện Pháp-Việt nằm tại số 6 Nguyễn Lương Bằng Q7 TPHCM. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33 <3"
+            elif value==2:
+                message = "Bệnh viện của chúng tôi nằm tại số 6 Nguyễn Lương Bằng, Nam Sài Gòn (Phú Mỹ Hưng), Quận 7, Tp. Hồ Chí Minh. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33 <3"
+            else:
+                message="Bạn có thể đến tại số 6 Nguyễn Lương Bằng, Q7, TPHCM để được khám bệnh tại bệnh viện chúng tôi. Bệnh viên của chúng tôi rất vui nếu có thể giúp bạn trong vấn đề sức khỏe"
             imageUrl = "https://static.ybox.vn/2016/8/25/54e0d5ce-6a74-11e6-b2ba-04011537df01.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/contact-us/hospital-contact-information/"
             options = build_options(
@@ -630,7 +637,12 @@ def hospital_information(intent_request):
             )
         elif Information == "Bảo hiểm":
             slots = {"InsuranceInformation": None}
-            message = ":D Bây giờ bạn muốn biết thông tin gì về dịch vụ bảo hiểm?"
+            if value==1:
+                message = "Cho tôi biết bạn muốn biết thông tin gì về dịch vụ bảo hiểm? <3 BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về bảo hiểm"
+            elif value==2:
+                message = "Bạn muốn biết thông tin nào về dịch vụ bảo hiểm? <3 BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về bảo hiểm"
+            else:
+                message = "Đâu là thông tin bạn muốn biết? <3 BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về bảo hiểm"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-is-HIW-thumBANNER-insurance-04-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/dich-vu-bao-hiem/"
             options = build_options(
@@ -650,7 +662,12 @@ def hospital_information(intent_request):
             )
         elif Information == "Viện phí":
             slots = {"HospitalService": None}
-            message = "<3 Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. Bấm vào hình bên dưới để biết thêm thông tin chi tiết."
+            if value==1:
+                message = "<3 Tại bệnh viện Pháp-Việt, chúng tôi áp dụng chính sách giá hợp lý và tương xứng với dịch vụ y tế chất lượng cao trong khu vực Đông Nam Á. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin chi tiết."
+            elif value==2:
+                message="Viện phí tại bệnh viên chúng tôi khá là hợp lí so với chất lượng của bệnh viện. Bạn có thể gọi đến số 02854113333 để được tư vấn kĩ hơn hoặc BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về viện phí"
+            else:
+                message="Viện phí của chúng tôi rất tốt so với mặt bằng các bệnh viên quốc tế, ngoài ra bệnh viện chúng tôi còn chấp nhật bảo hiểm y tế của nhiều công ty. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin về viện phí"
             imageUrl = "https://www.hoanmydongnai.com/upload/hoanmydongnai.com/images/service/2019-05-14/detail_1557819248_8ZfOSJvAeJ.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/thong-tin-danh-cho-benh-nhan/thong-tin-vien-phi/"
             options = build_options(
@@ -669,7 +686,12 @@ def hospital_information(intent_request):
                 }, responseCard
             )
         elif Information == "Cơ sở vật chất":
-            message = "Bệnh viện FV được trang bị đầy đủ để phục vụ mọi nhu cầu theo dõi và điều trị. Tất cả các phòng điều trị nội trú đều rộng rãi, sạch sẽ và được trang bị đầy đủ tiện nghi. Bấm vào hình bên dưới để biết thêm thông tin chi tiết.<3<3<3"
+            if value==1:
+                message = "Bệnh viện FV được trang bị đầy đủ để phục vụ mọi nhu cầu theo dõi và điều trị. Tất cả các phòng điều trị nội trú đều rộng rãi, sạch sẽ và được trang bị đầy đủ tiện nghi. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin chi tiết.<3<3<3"
+            elif value==2:
+                message="Cơ sở vật chất tại bệnh viện chúng tôi là hàng đầu Đông Nam Á, chúng tôi tự tin với những cơ sở vật chật này thì chúng tôi có đủ khả năng để phục vụ nhu cầu sức khỏe của bạn mốt cách tốt nhất. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm <3"
+            else:
+                message="Trang thiết bị và phòng ốc tại đây vô cùng hiện đại và tiện nghi, tạo điều kiện thuận lợi nhất cho việc chăm sóc sức khỏe của các bệnh nhân. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm <3"
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2017/02/informationforpatient-yourroomatfv-desktop-2-2016-765xNull.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/thong-tin-danh-cho-benh-nhan/phong-dieu-tri-noi-tru-tai-benh-vien-fv/"
             options = build_options(
@@ -685,7 +707,12 @@ def hospital_information(intent_request):
                 options, imageUrl, attachmentLinkUrl
             )
         elif Information == "Hội viên":
-            message = "Hội viên của bệnh viện Pháp - Việt được hưởng rất nhiều quyền lợi. Bấm vào hình bên dưới để biết thêm thông tin chi tiết. ;)"
+            if value==1:
+                message = "Hội viên của bệnh viện Pháp - Việt được hưởng rất nhiều quyền lợi. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm thông tin chi tiết. ;)"
+            elif value==2:
+                message="Nếu trở thành hội viên bạn sẽ nhận được vô cùng nhiều ưu đãi về giá cả, phòng chờ, ưu tiên khám bệnh cũng như được tư vấn chuyên sâu hơn. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm."
+            else:
+                message="Hội viên sẽ nhận được nhiều ưu đãi về chi phí khám chữa bệnh, cũng như là được tiếp đón kĩ càng hơn tại bệnh viện. BẤM VÀO HÌNH BÊN DƯỚI để biết thêm."
             imageUrl = "https://www.fvhospital.com/wp-content/uploads/2016/08/im-fvmp-membership-guide-thumBANNER-05-370x210.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/vi/bao-hiem-hoi-vien/chuong-trinh-hoi-vien-fv/"
             options = build_options(

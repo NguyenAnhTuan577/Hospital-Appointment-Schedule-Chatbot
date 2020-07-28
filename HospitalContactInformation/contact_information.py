@@ -21,6 +21,7 @@ import sys
 import urllib.parse as up
 from datetime import timedelta
 import urllib3
+from random import randint
 
 
 sys.path.insert(0, '/psycopg2')
@@ -134,9 +135,7 @@ def close(session_attributes, fulfillment_state, message):
             'message': message
         }
     }
-
     return response
-
 
 def close2(session_attributes, fulfillment_state, message, title, subtitle, options, imageUrl, attachmentLinkUrl):
     responseCard = build_response_card(
@@ -164,7 +163,7 @@ def delegate(session_attributes, slots):
     }
 
 
-def build_response_card(title, subtitle, options):
+def build_response_card(title, subtitle, options, imageUrl, attachmentLinkUrl):
     """
     Build a responseCard with a title, subtitle, and an optional set of options which should be displayed as buttons.
     """
@@ -173,6 +172,10 @@ def build_response_card(title, subtitle, options):
     if options is not None:
         buttons = []
         genericAttachmentElement = {}
+        if not attachmentLinkUrl:
+            attachmentLinkUrl = "https://www.facebook.com/Sai-Gon-Hospital-Bot-109455814006419/?modal=admin_todo_tour"
+        if not imageUrl:
+            imageUrl = "https://article.images.consumerreports.org/f_auto/prod/content/dam/CRO%20Images%202018/Health/May/CR-Health-InlineHero-C-Section-Risk-Hospital-05-18"
         cnt = 0
         for i in range(len(options)):
             buttons.append(options[i])
@@ -181,6 +184,8 @@ def build_response_card(title, subtitle, options):
                 genericAttachmentElement = {
                     'title': title,
                     'subTitle': subtitle,
+                    "imageUrl": imageUrl,
+                    "attachmentLinkUrl": attachmentLinkUrl,
                     'buttons': buttons
                 }
                 genericAttachments.append(genericAttachmentElement)
@@ -194,42 +199,6 @@ def build_response_card(title, subtitle, options):
         1,
         'genericAttachments': genericAttachments
     }
-
-    # return
-    #   {
-    #     "attachmentLinkUrl": None,
-    #     "buttons": [
-    #       {
-    #         "text": "Nam",
-    #         "value": "Nam"
-    #       },
-    #       {
-    #         "text": "Nữ",
-    #         "value": "Nữ"
-    #       }
-    #     ],
-    #     "imageUrl": None,
-    #     "subTitle": None,
-    #     "title": "Giới tính của bạn là gì?"
-    #   },
-    #   {
-    #     "attachmentLinkUrl": None,
-    #     "buttons": [
-    #       {
-    #         "text": "nam1",
-    #         "value": "Nam"
-    #       },
-    #       {
-    #         "text": "nu1",
-    #         "value": "Nữ"
-    #       }
-    #     ],
-    #     "imageUrl": None,
-    #     "subTitle": None,
-    #     "title": "Giới tính của bạn là gì?"
-    #   }
-    # }
-
 
 """ --- Helper Functions --- """
 
@@ -634,8 +603,14 @@ def contact_information(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
+        value = randint(1, 3)
         if not HospitalService:
-            message = "Chào bạn! Bệnh viện Pháp-Việt nằm tại số 6 Nguyễn Lương Bằng, Nam Sài Gòn (Phú Mỹ Hưng), Quận 7, Tp. Hồ Chí Minh. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33 <3"
+            if value==1:
+                message = "Chào bạn! Bệnh viện Pháp-Việt nằm tại số 6 Nguyễn Lương Bằng Q7 TPHCM. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33 <3"
+            elif value==2:
+                message = "Bệnh viện của chúng tôi nằm tại số 6 Nguyễn Lương Bằng, Nam Sài Gòn (Phú Mỹ Hưng), Quận 7, Tp. Hồ Chí Minh. Để được tư vấn bạn có thể liên lạc đến số (028) 54 11 33 33 <3"
+            else:
+                message="Bạn có thể đến tại số 6 Nguyễn Lương Bằng, Q7, TPHCM để được khám bệnh tại bệnh viện chúng tôi. Bệnh viên của chúng tôi rất vui nếu có thể giúp bạn trong vấn đề sức khỏe"
             imageUrl = "https://static.ybox.vn/2016/8/25/54e0d5ce-6a74-11e6-b2ba-04011537df01.jpg"
             attachmentLinkUrl = "https://www.fvhospital.com/contact-us/hospital-contact-information/"
             options = build_options(
@@ -676,7 +651,7 @@ def contact_information(intent_request):
                 build_response_card(
                     'Các khoa của bệnh viện',
                     'Mời bạn chọn khoa mình muốn khám',
-                    build_options('Speciality', None, None, None, None, psid, None, None, None), None, None)
+                    build_options('Speciality', None, None, None, None, psid, None, None, None),None,None)
             )
         elif HospitalService == 'Chỉnh sửa lịch hẹn':
             slots = {
@@ -716,7 +691,7 @@ def contact_information(intent_request):
                     build_response_card(
                         'Bạn có các lịch hẹn với các bác sĩ sau đây',
                         'Mời bạn chọn lịch hẹn muốn được cập nhật',
-                        options))
+                        options,None,None))
         elif HospitalService == 'Hủy lịch hẹn':
             slots = {"AccountFBMakeAppointment": "Tài khoản này",
                      "Appointment": None,
@@ -748,7 +723,7 @@ def contact_information(intent_request):
                     build_response_card(
                         'Bạn có các lịch hẹn với các bác sĩ sau đây',
                         'Mời bạn chọn lịch hẹn muốn hủy',
-                        options))
+                        options,None,None))
         elif HospitalService == 'Xem lịch hẹn':
             slots = {
                 "AccountFBMakeAppointment": None,
@@ -770,7 +745,7 @@ def contact_information(intent_request):
                 build_response_card(
                     'Tài khoản Facebook đã dùng để đặt lịch',
                     'Mời bạn chọn loại tài khoản',
-                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None)))
+                    build_options('AccountFBMakeAppointment', None, None, None, None, psid, None, None, None),None,None))
         elif HospitalService == 'Xem thông tin bệnh viện':
             slots = {
                 "HospitalService": None,

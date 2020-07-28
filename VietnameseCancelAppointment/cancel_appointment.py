@@ -646,8 +646,9 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         while len(options) < 30:
             potential_date = potential_date + datetime.timedelta(days=1)
             print(potential_date.weekday())
+            day_strings_vn=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật']
             if dict_date[day_strings[potential_date.weekday()]] == True:
-                options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings[potential_date.weekday()]),
+                options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings_vn[potential_date.weekday()]),
                                 'value': potential_date.strftime('%A, %B %d, %Y')})
         return options
     elif slot == 'Time':
@@ -831,22 +832,14 @@ def cancel_appointment(intent_request):
     if source == 'DialogCodeHook':
         # Perform basic validation on the supplied input slots.
         slots = intent_request['currentIntent']['slots']
-        # validation_result = validate_book_appointment(appointment_type, date, appointment_time)
-        # if not validation_result['isValid']:
-        #     slots[validation_result['violatedSlot']] = None
-        #     return elicit_slot(
-        #         output_session_attributes,
-        #         intent_request['currentIntent']['name'],
-        #         slots,
-        #         validation_result['violatedSlot'],
-        #         validation_result['message'],
-        #         build_response_card(
-        #             'Specify {}'.format(validation_result['violatedSlot']),
-        #             validation_result['message']['content'],
-        #             build_options(validation_result['violatedSlot'], appointment_type, date, booking_map)
-        #         )
-        #     )
-        #     return delegate(output_session_attributes, slots)
+        if Appointment=='Kết thúc':
+            return close2(
+                output_session_attributes,
+                'Fulfilled',
+                {
+                    'contentType': 'PlainText',
+                    'content': 'Bạn có thể tham khảo thêm các hỗ trợ khác của chatbot ở đây:'
+                })
         if not AccountFBMakeAppointment:
             AccountFBMakeAppointment = "Tài khoản này"
             slots['AccountFBMakeAppointment'] = "Tài khoản này"
@@ -875,7 +868,7 @@ def cancel_appointment(intent_request):
                         'Name',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết họ và tên của bệnh nhân'
+                            'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết HỌ VÀ TÊN của bệnh nhân?'
                         },
                         None)
                 # elif len(options)==2:
@@ -906,7 +899,7 @@ def cancel_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Chào {}! Đây là các lịch được đặt bởi tài khoản facebook này. Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ? :D'.format(fb_first_name)
+                            'content': 'Chào {}! Đây là các lịch được đặt bởi tài khoản facebook này. Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ? (Bạn cũng có thể hủy hẹn được đặt bởi tài khoản FB khác thông qua thông tin bệnh nhân)'.format(fb_first_name)
                         },
                         build_response_card(
                             'Bạn có các lịch hẹn với các bác sĩ sau đây',
@@ -924,7 +917,7 @@ def cancel_appointment(intent_request):
                             'content': 'Dạ, Họ tên của bệnh nhân là gì ạ?'
                         },
                         None)
-                if not DateOfBird:
+                elif not DateOfBird:
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
@@ -932,10 +925,10 @@ def cancel_appointment(intent_request):
                         'DateOfBird',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Bây giờ tôi cần biết ngày sinh của bệnh nhân?'
+                            'content': 'Bây giờ tôi cần biết NGÀY THÁNG NĂM SINH của bệnh nhân?'
                         },
                         None)
-                if not PhoneNumber:
+                elif not PhoneNumber:
                     # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
                     print(intent_request['currentIntent']['slots'])
                     arr_date = DateOfBird.split('-')
@@ -943,6 +936,16 @@ def cancel_appointment(intent_request):
                         arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
                     DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
                     slots['DateOfBird'] = DateOfBird
+                    if datetime.datetime.strptime(DateOfBird, '%Y-%m-%d').date()  >= datetime.date.today():
+                        print("DateOfBird invalid")
+                        slots['DateOfBird']=None
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'DateOfBird', {
+                                'contentType': 'PlainText',
+                                'content': 'Ngày tháng năm sinh không hợp lệ, mời bạn nhập lại NGÀY THÁNG NĂM SINH?'
+                            }, None)
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
@@ -950,6 +953,17 @@ def cancel_appointment(intent_request):
                             'contentType': 'PlainText',
                             'content': 'Bây giờ cho tôi xin số điện thoại đã đặt lịch hẹn? ^_^'
                         }, None)
+                else:
+                    regex= "(03|07|08|09|01[2|6|8|9])+([0-9]{8})\\b"
+                    if not re.search(regex, PhoneNumber):
+                        slots['PhoneNumber']=None
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'PhoneNumber', {
+                                'contentType': 'PlainText',
+                                'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
+                            }, None)
                 options=build_options('Appointment', None, None, None, None, psid, name, DateOfBird, PhoneNumber)
                 if options==None:
                     slots['Name'] = None
@@ -964,7 +978,7 @@ def cancel_appointment(intent_request):
                         'Name',
                         {
                             'contentType': 'PlainText',
-                            'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Họ tên bệnh nhân là gì?. :)'.format(name, date_of_bird_display, PhoneNumber)
+                            'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. HỌ TÊN bệnh nhân là gì?. :)'.format(name, date_of_bird_display, PhoneNumber)
                         },
                         None)
                 # elif  len(options)==2:
@@ -997,7 +1011,7 @@ def cancel_appointment(intent_request):
                 'Name',
                 {
                     'contentType': 'PlainText',
-                    'content': 'Tôi cần biết họ tên của bệnh nhân để hủy lịch hẹn! <3'
+                    'content': 'Tôi cần biết họ tên của bệnh nhân để hủy lịch hẹn? <3'
                 },
                 None)
         elif not Confirmation:
@@ -1014,7 +1028,7 @@ def cancel_appointment(intent_request):
                             'Name',
                             {
                                 'contentType': 'PlainText',
-                                'content': 'Hãy cho tôi biết họ tên của bệnh nhân là gì ạ?'
+                                'content': 'Hãy cho tôi biết HỌ TÊN của bệnh nhân là gì ạ?'
                             },
                             None)
                 elif not DateOfBird:
@@ -1036,6 +1050,16 @@ def cancel_appointment(intent_request):
                         arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
                     DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
                     slots['DateOfBird'] = DateOfBird
+                    if datetime.datetime.strptime(DateOfBird, '%Y-%m-%d').date()  >= datetime.date.today():
+                        print("DateOfBird invalid")
+                        slots['DateOfBird']=None
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'DateOfBird', {
+                                'contentType': 'PlainText',
+                                'content': 'Ngày tháng năm sinh không hợp lệ, mời bạn nhập lại NGÀY THÁNG NĂM SINH?'
+                            }, None)
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
@@ -1043,6 +1067,17 @@ def cancel_appointment(intent_request):
                             'contentType': 'PlainText',
                             'content': 'Số điện thoại đã đặt lịch hẹn là gì ạ?'
                         }, None)
+                else:
+                    regex= "(03|07|08|09|01[2|6|8|9])+([0-9]{8})\\b"
+                    if not re.search(regex, PhoneNumber):
+                        slots['PhoneNumber']=None
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots, 'PhoneNumber', {
+                                'contentType': 'PlainText',
+                                'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
+                            }, None)
             try:
                 connection = psycopg2.connect(
                     "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
@@ -1073,7 +1108,7 @@ def cancel_appointment(intent_request):
                                 'Name',
                                 {
                                     'contentType': 'PlainText',
-                                    'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. Họ tên bệnh nhân là gì?. :)'.format(name, date_of_bird_display, PhoneNumber)
+                                    'content': 'Bệnh nhân {} sinh ngày {} có số điện thoại {} không có lịch hẹn nào cả. Mời bạn nhập lại thông tin. HỌ TÊN bệnh nhân là gì?. :)'.format(name, date_of_bird_display, PhoneNumber)
                                 },
                                 None)
                         else:
@@ -1085,7 +1120,7 @@ def cancel_appointment(intent_request):
                                 'Name',
                                 {
                                     'contentType': 'PlainText',
-                                    'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết họ và tên của bệnh nhân'
+                                    'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết HỌ VÀ TÊN của bệnh nhân?'
                                 },
                                 None)
                     return elicit_slot(
@@ -1117,7 +1152,7 @@ def cancel_appointment(intent_request):
                             },
                             build_response_card(
                                 'Các bác sĩ tên {} của khoa'.format(Appointment),
-                                'Mời bạn chọn họ và tên đầy đủ của bác sĩ',
+                                'Mời bạn chọn HỌ VÀ TÊN đầy đủ của bác sĩ',
                                 options))
                     if not name:
                         slots['Name'] = None
@@ -1131,7 +1166,7 @@ def cancel_appointment(intent_request):
                             'Name',
                             {
                                 'contentType': 'PlainText',
-                                'content': 'Tài khoản này đã đặt nhiều lịch hẹn với bác sĩ {}, để việc hủy hẹn được chính xác, mình cần biết họ và tên của bệnh nhân?'.format(Appointment)
+                                'content': 'Tài khoản này đã đặt nhiều lịch hẹn với bác sĩ {}, để việc hủy hẹn được chính xác, mình cần biết HỌ VÀ TÊN của bệnh nhân?'.format(Appointment)
                             },
                             None)
                     elif not DateOfBird:
@@ -1153,6 +1188,16 @@ def cancel_appointment(intent_request):
                             arr_date[1], arr_date[2] = arr_date[2], arr_date[1]
                         DateOfBird = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
                         slots['DateOfBird'] = DateOfBird
+                        if datetime.datetime.strptime(DateOfBird, '%Y-%m-%d').date()  >= datetime.date.today():
+                            print("DateOfBird invalid")
+                            slots['DateOfBird']=None
+                            return elicit_slot(
+                                output_session_attributes,
+                                intent_request['currentIntent']['name'],
+                                slots, 'DateOfBird', {
+                                    'contentType': 'PlainText',
+                                    'content': 'Ngày tháng năm sinh không hợp lệ, mời bạn nhập lại NGÀY THÁNG NĂM SINH?'
+                                }, None)
                         return elicit_slot(
                             output_session_attributes,
                             intent_request['currentIntent']['name'],
@@ -1160,6 +1205,17 @@ def cancel_appointment(intent_request):
                                 'contentType': 'PlainText',
                                 'content': 'Số điện thoại đã đặt lịch hẹn là gì ạ?'
                             }, None)
+                    else:
+                        regex= "(03|07|08|09|01[2|6|8|9])+([0-9]{8})\\b"
+                        if not re.search(regex, PhoneNumber):
+                            slots['PhoneNumber']=None
+                            return elicit_slot(
+                                output_session_attributes,
+                                intent_request['currentIntent']['name'],
+                                slots, 'PhoneNumber', {
+                                    'contentType': 'PlainText',
+                                    'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
+                                }, None)
                     #nếu lịch hẹn cùng 1 bệnh nhân, cùng 1 tài khoản đặt thì hủy toàn bộ lịch đó(nhưng sẽ chặn trường hợp này trong xử lý MakeAppointment)
             except (Exception, psycopg2.Error) as error:
                 print("Error while connecting to PostgreSQL", error)
@@ -1213,7 +1269,7 @@ def cancel_appointment(intent_request):
                 'Fulfilled',
                 {
                     'contentType': 'PlainText',
-                    'content': 'Hủy lịch hẹn thất bại. Bạn có thể tham khảo các dịch vụ hỗ trợ khác của chat bot. O:)'
+                    'content': 'Hủy lịch hẹn không được tiến hành. Bạn có thể tham khảo các dịch vụ hỗ trợ khác của chat bot. O:)'
                 }
             )
         return delegate(output_session_attributes, slots)

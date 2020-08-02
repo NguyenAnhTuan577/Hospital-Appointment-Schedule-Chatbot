@@ -52,18 +52,17 @@ xxx = {
     "currentIntent": {
         "name": "VietnameseMakeAppointment",
         "slots": {
-              "Confirmation": None,
-    "Date": "2020-7-30",
+            "Confirmation": None,
+    "Date": None,
     "DateOfBird": None,
     "DiseaseOne": None,
     "DiseaseTwo": None,
-    "Doctor": "Huỳnh Lê Hải Trình",
+    "Doctor": "thảo",
     "FormattedDate": None,
     "Name": None,
     "PhoneNumber": None,
-    "Speciality": "Khoa Nha & Phẫu Thuật Hàm Mặt",
+    "Speciality": "Trung Tâm Điều Trị Ung Thư Hy Vọng",
     "Time": None,
-    "UpdateInfor": None,
     "UpdateSlot": None
         }
     },
@@ -243,12 +242,6 @@ def valid_appointment(doctor, speciality, date, time):
                     records2 = cursor.fetchall()
                     # nếu lịch hẹn này chưa được đặt trong hệ thống thì xuất 1 button lịch này ra màn hình
                     #print('records2:', records2)
-                    # đây nek
-                    date_now=datetime.datetime.now().date()
-                    time_now=datetime.datetime.now().time().strftime("%H:%M")
-                    if datetime.datetime.strptime(date, '%Y-%m-%d').date()==date_now and compare_time(time_begin,time_now)<0:
-                        time_begin = increment_time_by_thirty_mins(time_begin)
-                        continue
                     if len(records2) == 0:
                         value_time.append(time_begin)
                 except (Exception, psycopg2.Error) as error:
@@ -783,6 +776,9 @@ def build_options(slot, speciality, doctor, date, time, psid):
         potential_date = datetime.date.today()
         #potential_date.strftime('%A, %B %d, %Y')
         while len(options) < 30:
+            potential_date = potential_date + datetime.timedelta(days=1)
+            # print(potential_date.weekday())
+            # print(len(options))
             if dict_date[day_strings[potential_date.weekday()]] == True:
                 try:
                     # connection = psycopg2.connect(
@@ -852,7 +848,6 @@ def build_options(slot, speciality, doctor, date, time, psid):
                         return None
                 except (Exception, psycopg2.Error) as error:
                     print("Error while connecting to PostgreSQL2", error)
-            potential_date = potential_date + datetime.timedelta(days=1)
         if(connection):
             cursor.close()
             connection.close()
@@ -931,25 +926,27 @@ def build_options(slot, speciality, doctor, date, time, psid):
                         records2 = cursor.fetchall()
                         # nếu lịch hẹn này chưa được đặt trong hệ thống thì xuất 1 button lịch này ra màn hình
                         #print('records2:', records2)
-                        date_now=datetime.datetime.now().date()
-                        time_now=datetime.datetime.now().time().strftime("%H:%M")
-                        if datetime.datetime.strptime(date, '%Y-%m-%d').date()==date_now and compare_time(time_begin,time_now)<0:
-                            time_begin = increment_time_by_thirty_mins(time_begin)
-                            continue
                         if len(records2) == 0:
                             value_time.append(time_begin)
                     except (Exception, psycopg2.Error) as error:
                         print("Error while connecting to PostgreSQL", error)
                     time_begin = increment_time_by_thirty_mins(time_begin)
+                    #print('time begin update: %s' % time_begin)
+                # print('***************************************')
+            # print('end')
             for x in value_time:
-                #đây nek
-                temp = {
-                        'text': build_time_output_string(x),
-                        'value': build_time_output_string(x)}
+                if date==datetime.datetime.now().date():
+                    if time>datetime.datetime.now().time():
+                        temp = {
+                            'text': build_time_output_string(x),
+                            'value': build_time_output_string(x)}
+                else:
+                    temp = {
+                            'text': build_time_output_string(x),
+                            'value': build_time_output_string(x)}
                 res.append(temp)
-            if len(res)==0:
-                return None
             return res
+
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
         finally:
@@ -1381,7 +1378,7 @@ def make_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Date', {
                             'contentType': 'PlainText',
-                            'content': 'Rất tiếc bác sĩ {} không khám bệnh vào ngày {} hoặc đã bị kín lịch. Bạn có thể chọn ngày khác không ạ?'.format(doctor, date_display)
+                            'content': 'Rất tiếc bác sĩ {} không làm việc vào ngày {}. Bạn có thể chọn ngày khác không ạ?'.format(doctor, date_display)
                         },
                         build_response_card(
                             '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
@@ -1405,32 +1402,16 @@ def make_appointment(intent_request):
                 # if doctor and date and time:
                 arr_date = date.split('-')
                 date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
-                # kiểm tra ngày hợp lệ
-                if datetime.datetime.strptime(date, '%Y-%m-%d').date()  < datetime.date.today():
-                    print("Date invalid")
-                    slots['Date']=None
-                    slots['FormattedDate']=None
-                    options = build_options('Date', speciality, doctor, date, time, None)
-                    return elicit_slot(
-                        output_session_attributes,
-                        intent_request['currentIntent']['name'],
-                        slots, 'Date', {
-                            'contentType': 'PlainText',
-                            'content': 'Ngày khám không hợp lệ, mời bạn nhập lại NGÀY muốn khám bệnh?'
-                        }, build_response_card(
-                            '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
-                            'Mời bạn chọn ngày khám bệnh',
-                            options, None))
                 # nếu lịch không hợp lệ và slottype = null thì hỏi người dùng cần chỉnh UpdateSlot nào. nếu lịch không hợp lệ và slottype khác null thì set slot đang xét về null
                 # nếu hợp lệ thì set slottype hiện tại bằng null
                 valid = valid_appointment(doctor, speciality, date, time)
                 if valid == False:  # cần sửa
                     if not UpdateSlot:
                         if speciality:
-                            message = 'Rất tiếc khi hiện tại bác sĩ {} của {} không thể khám bệnh vào {} ngày {}'.format(
+                            message = 'Rất tiếc khi hiện tại bác sĩ {} của {} không rảnh vào {} ngày {}'.format(
                                 doctor, speciality, time, date_display)
                         else:
-                            message = 'Rất tiếc khi hiện tại bác sĩ {} không thể khám bệnh vào {} ngày {}'.format(
+                            message = 'Rất tiếc khi hiện tại bác sĩ {} không rảnh vào {} ngày {}'.format(
                                 doctor, time, date_display)
                         return elicit_slot(
                             output_session_attributes,

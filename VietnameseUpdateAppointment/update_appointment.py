@@ -55,15 +55,15 @@ xxx = {
         "name": "VietnameseUpdateAppointment",
         "slots": {
              "AccountFBMakeAppointment": "Tài khoản này",
-    "Appointment": "Lê Trọng Phát",
-    "ChangeType": None,
+    "Appointment": "Trần Thị Phương Thảo",
+    "ChangeType": "Ngày",
     "Confirmation": None,
-    "Date": None,
-    "DateOfBird": None,
-    "Doctor": None,
-    "Name": None,
-    "PhoneNumber": None,
-    "Speciality": None,
+    "Date": "2020-7-29",
+    "DateOfBird": "1997-12-22",
+    "Doctor": "Trần Thị Phương Thảo",
+    "Name": "Nguyễn Anh Tuấn",
+    "PhoneNumber": "0399416955",
+    "Speciality": "Trung Tâm Điều Trị Ung Thư Hy Vọng",
     "Time": None
         }
     },
@@ -372,6 +372,74 @@ def isvalid_date(date):
         return True
     except ValueError:
         return False
+
+def valid_appointment(doctor, speciality, date, time):
+    day_strings = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    value_time = []
+    try:
+        connection = psycopg2.connect(
+            "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
+        #connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
+        cursor = connection.cursor()
+        date_weekday = day_strings[datetime.datetime.strptime(
+            date, '%Y-%m-%d').date().weekday()]  # ngày kiểu datetime
+        if speciality:
+            cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name = '{}' and ms.name = '{}' and wh.day='{}'  order by wh.time;".format(
+                doctor, speciality, date_weekday))
+        else:
+            cursor.execute("SELECT wh.time FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name = '{}'  and wh.day='{}'  order by wh.time;".format(
+                doctor, date_weekday))
+        records = cursor.fetchall()
+        if len(records) == 0:
+            return False
+        # print(len(records))
+        for row in records:
+            time_temp = row[0].split(' – ')
+            if(len(time_temp) != 2):
+                time_temp = row[0].split(' - ')
+            if(len(time_temp) != 2):
+                time_temp = row[0].split('–')
+            if(len(time_temp) != 2):
+                time_temp = row[0].split('-')
+            time_begin = time_temp[0]
+            time_end = time_temp[1]
+            # print('time begin:---%s------'%time_begin)
+            # print('time end:----------%s----' %time_end)
+            while compare_time(time_begin, time_end) < 0:
+                # xxxxxxxxxxxxxxxx
+                try:
+                    if speciality:
+                        cursor.execute("SELECT * FROM appointment_schedule as a where a.doctor = '{}' and a.speciality = '{}' and a.date='{}' and a.time='{}';".format(
+                            doctor, speciality, date, time_begin))
+                    else:
+                        cursor.execute("SELECT * FROM appointment_schedule as a where a.doctor = '{}'  and a.date='{}' and a.time='{}';".format(
+                            doctor, date, time_begin))
+                    records2 = cursor.fetchall()
+                    # nếu lịch hẹn này chưa được đặt trong hệ thống thì xuất 1 button lịch này ra màn hình
+                    #print('records2:', records2)
+                    # đây nek
+                    date_now=datetime.datetime.now().date()
+                    time_now=datetime.datetime.now().time().strftime("%H:%M")
+                    if datetime.datetime.strptime(date, '%Y-%m-%d').date()==date_now and compare_time(time_begin,time_now)<0:
+                        time_begin = increment_time_by_thirty_mins(time_begin)
+                        continue
+                    if len(records2) == 0:
+                        value_time.append(time_begin)
+                except (Exception, psycopg2.Error) as error:
+                    print("Error while connecting to PostgreSQL", error)
+                time_begin = increment_time_by_thirty_mins(time_begin)
+    except (Exception, psycopg2.Error) as error:
+        print("Error while connecting to PostgreSQL", error)
+    finally:
+        # closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
+            print("PostgreSQL connection is closed")
+    for x in value_time:
+        if time == x:
+            return True
+    return False
 
 
 def is_available(appointment_time, duration, availabilities):
@@ -716,12 +784,12 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         potential_date = datetime.date.today()
         # potential_date.strftime('%A, %B %d, %Y')
         while len(options) < 30:
-            potential_date = potential_date + datetime.timedelta(days=1)
             # print(potential_date.weekday())
             day_strings_vn=['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật']
             if dict_date[day_strings[potential_date.weekday()]] == True:
                 options.append({'text': '{}-{} ({})'.format(potential_date.day, potential_date.month, day_strings_vn[potential_date.weekday()]),
                                 'value': potential_date.strftime('%Y-%d-%m')})  # value chỉnh từ format %Y-%m-d sang %Y-%d-%m cho trùng với định dạng người dùng nhập vào
+            potential_date = potential_date + datetime.timedelta(days=1)
         return options
     elif slot == 'Time':
         # Return the availabilities on the given date.
@@ -788,7 +856,6 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                 while compare_time(time_begin, time_end) < 0:
                     # xxxxxxxxxxxxxxxx
                     try:
-
                         if speciality:
                             cursor.execute("SELECT * FROM appointment_schedule as a where a.doctor = '{}' and a.speciality = '{}' and a.date='{}' and a.time='{}';".format(
                                 doctor, speciality, date, time_begin))
@@ -798,6 +865,11 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
                         records2 = cursor.fetchall()
                         # nếu lịch hẹn này chưa được đặt trong hệ thống thì xuất 1 button lịch này ra màn hình
                         #print('records2:', records2)
+                        date_now=datetime.datetime.now().date()
+                        time_now=datetime.datetime.now().time().strftime("%H:%M")
+                        if datetime.datetime.strptime(date, '%Y-%m-%d').date()==date_now and compare_time(time_begin,time_now)<0:
+                            time_begin = increment_time_by_thirty_mins(time_begin)
+                            continue
                         if len(records2) == 0:
                             value_time.append(time_begin)
                     except (Exception, psycopg2.Error) as error:
@@ -834,9 +906,9 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
 
             # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
-                query="SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now()".format(name, DateOfBird, PhoneNumber)
+                query="SELECT distinct a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time)) order by a.date, a.time".format(name, DateOfBird, PhoneNumber)
             else:
-                query="SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.psid='{}' and a.date+1>now()".format(psid)
+                query="SELECT distinct a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time)) order by a.date, a.time".format(psid)
             if speciality:
                 query=query+" and speciality='{}';".format(speciality)
             else:
@@ -846,7 +918,7 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
         finally:
-            # closing database connection.
+            # closing database connection.đây nek
             if(connection):
                 cursor.close()
                 connection.close()
@@ -856,15 +928,13 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         if len(records) == 0:
             return None
         for row in records:
-            # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
             str_value = row[0]
-            date_of_appointment = row[1]
-            if date_of_appointment >= datetime.date.today():
-                set_doctor.add(str_value)
-        for i in set_doctor:
+            if(str_value in set_doctor):
+                continue
+            set_doctor.add(str_value)
             temp = ({
-                    'text': i,
-                    'value': i})
+                'text': str_value,
+                'value': str_value})
             res.append(temp)
         temp = ({
                 'text': 'Khác',
@@ -911,7 +981,7 @@ def update_appointment(intent_request):
         'sessionAttributes'] if intent_request[
             'sessionAttributes'] is not None else {}
     psid = "2768186586569088"
-    # psid="2872158819534978"
+    #psid="2872158819534978"
     try:
         psid = intent_request['requestAttributes']['x-amz-lex:user-id']
     except Exception as error:
@@ -988,11 +1058,11 @@ def update_appointment(intent_request):
                         "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
                     cursor = connection.cursor()
                     if name and DateOfBird and PhoneNumber:
-                        query = """Select DISTINCT doctor From appointment_schedule where patient_name ILIKE '%{}' and date_of_birth='{}' and phone_number='{}' and speciality='{}' and date+1>now()""".format(
+                        query = """Select DISTINCT a.doctor From appointment_schedule as a where a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.speciality='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time))""".format(
                             name, DateOfBird, PhoneNumber, speciality)
                         cursor.execute(query)
                     else: 
-                        query = """Select DISTINCT doctor From appointment_schedule where psid='{}' and speciality='{}' and date+1>now()""".format(
+                        query = """Select DISTINCT a.doctor From appointment_schedule as a where a.psid='{}' and a.speciality='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time))""".format(
                             psid, speciality)
                         cursor.execute(query)
                     records = cursor.fetchall()
@@ -1290,10 +1360,10 @@ def update_appointment(intent_request):
                 cursor = connection.cursor()
                 if name and DateOfBird and PhoneNumber:
                     cursor.execute(
-                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(Appointment, name, DateOfBird, PhoneNumber))
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment, name, DateOfBird, PhoneNumber))
                 else:
                     cursor.execute(
-                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and a.date+1>now();".format(Appointment,psid))
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment,psid))
                 records = cursor.fetchall()
                 if cursor.rowcount<1:
                     slots['Appointment']=None
@@ -1324,7 +1394,7 @@ def update_appointment(intent_request):
                                 'Name',
                                 {
                                     'contentType': 'PlainText',
-                                    'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để hủy lịch hẹn tôi cần được biết họ và tên của bệnh nhân?'
+                                    'content': 'Hiện tài khoản này chưa đặt lịch hẹn nào. Để thay đổi lịch hẹn tôi cần được biết họ và tên của bệnh nhân?'
                                 },
                                 None)
                     return elicit_slot(
@@ -1332,7 +1402,7 @@ def update_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Mình muốn biết bạn cần thay đổi lịch hẹn với bác sĩ nào ạ?'
+                            'content': 'Lịch hẹn với bác sĩ {} không tồn tại. Mình muốn biết bạn cần thay đổi lịch hẹn với bác sĩ nào ạ?'.format(Appointment)
                         },
                         build_response_card(
                             'Hiện tại có các lịch hẹn với các bác sĩ sau:',
@@ -1346,28 +1416,35 @@ def update_appointment(intent_request):
                     Appointment=records[0][3]
                 else:
                     element_of_name = Appointment.split(' ')
-                    if len(element_of_name) == 1:
-                        options = []
-                        for row in records:
-                            temp = {
-                                'text': row[3],
-                                'value': row[3]}
-                            options.append(temp)
+                    set_doctor = set()
+                    options = []
+                    for row in records:
+                        str_value = row[3]
+                        if(str_value in set_doctor):
+                            continue
+                        set_doctor.add(str_value)
+                        temp = ({
+                            'text': str_value,
+                            'value': str_value})
+                        options.append(temp)
+                    if len(options) > 1:
                         return elicit_slot(
                             output_session_attributes,
                             intent_request['currentIntent']['name'],
                             slots, 'Appointment', {
                                 'contentType': 'PlainText',
-                                'content': 'Có nhiều bác sĩ tên {}. Bạn muốn hủy hẹn với bác sĩ nào ạ?'.format(Appointment)
+                                'content': 'Có nhiều bác sĩ tên {}. Bạn muốn thay đổi lịch hẹn với bác sĩ nào ạ?'.format(Appointment)
                             },
                             build_response_card(
                                 'Các bác sĩ tên {} của khoa'.format(Appointment),
                                 'Mời bạn chọn họ và tên đầy đủ của bác sĩ',
                                 options))
-                    if not name:
+                    elif not name:
                         slots['Name'] = None
                         slots['DateOfBird'] = None
                         slots['PhoneNumber'] = None
+                        slots['Appointment'] = records[0][3]
+                        Appointment  = records[0][3]
                         slots['AccountFBMakeAppointment'] = "Tài khoản khác"
                         return elicit_slot(
                             output_session_attributes,
@@ -1427,7 +1504,7 @@ def update_appointment(intent_request):
                                     'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
                                 }, None)
                     cursor.execute(
-                            "SELECT * FROM appointment_schedule as a WHERE a.doctor = '{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(Appointment,name,DateOfBird,PhoneNumber))
+                            "SELECT * FROM appointment_schedule as a WHERE a.doctor = '{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment,name,DateOfBird,PhoneNumber))
                     records = cursor.fetchall()
                     if cursor.rowcount==0:
                         name_temp = name
@@ -1474,12 +1551,12 @@ def update_appointment(intent_request):
                 # connection = psycopg2.connect("dbname='ivsnhdra' user='ivsnhdra' host='john.db.elephantsql.com' password='gyN4Z6OPzHvr6jp9ZsNLmYkfm2HkuM3f'")
                 cursor = connection.cursor()
                 if name and DateOfBird and PhoneNumber: #dữ liệu đúng trong thực tế thì chỉ có 1 dòng dữ liệu duy nhất
-                    query = """Select speciality,doctor,date,time,patient_name,date_of_birth,phone_number From appointment_schedule where doctor = '{}' and patient_name ILIKE '%{}' and date_of_birth='{}' and phone_number='{}' and date+1>now() ORDER BY date""".format(
+                    query = """Select speciality,doctor,date,time,patient_name,date_of_birth,phone_number From appointment_schedule where doctor = '{}' and patient_name ILIKE '%{}' and date_of_birth='{}' and phone_number='{}' and (date>current_date or (date=current_date and time>current_time)) ORDER BY date""".format(
                         Appointment, name, DateOfBird, PhoneNumber)
                     cursor.execute(query)
                     records = cursor.fetchall()
                 else: #luôn luôn chỉ có 1 dòng dữ liệu duy nhất
-                    query = """Select speciality,doctor,date,time, patient_name,date_of_birth,phone_number From appointment_schedule where doctor = '{}' and psid='{}' and date+1>now() ORDER BY date""".format(
+                    query = """Select speciality,doctor,date,time, patient_name,date_of_birth,phone_number From appointment_schedule where doctor = '{}' and psid='{}' and (date>current_date or (date=current_date and time>current_time)) ORDER BY date""".format(
                         Appointment, psid)
                     cursor.execute(query)
                     records = cursor.fetchall()
@@ -1645,6 +1722,8 @@ def update_appointment(intent_request):
                         build_options('Date', speciality, doctor, None, None, psid, None, None, None)))
         elif not time:
             arr_date = date.split('-')
+            #date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
+            # kiểm tra ngày hợp lệ
             if ChangeType != "Giờ":
                 # modify format for date input from user become date dd/mm/yyyy->yyyy/mm/dd
                 if int(arr_date[2]) < 13:
@@ -1657,10 +1736,11 @@ def update_appointment(intent_request):
                     if today.month < int(arr_date[1]) or (today.month == int(arr_date[1]) and today.day < int(arr_date[2])):
                         arr_date[0] = str(today.year)
                 date = arr_date[0]+'-'+arr_date[1]+'-'+arr_date[2]
+                #kiểm tra ngày hợp lệ
                 if datetime.datetime.strptime(date, '%Y-%m-%d').date()  < datetime.date.today():
                     print("Date invalid")
                     slots['Date']=None
-                    options = build_options('Date', speciality, doctor, date, time, None)
+                    options = build_options('Date', speciality, doctor, date, time, None,None,None,None)
                     return elicit_slot(
                         output_session_attributes,
                         intent_request['currentIntent']['name'],
@@ -1670,7 +1750,7 @@ def update_appointment(intent_request):
                         }, build_response_card(
                             '30 ngày làm việc gần nhất của bác sĩ ' + doctor,
                             'Mời bạn chọn ngày khám bệnh',
-                            options, None))
+                            options))
             date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
             slots['Date'] = date
             print("date nek", date)
@@ -1699,13 +1779,32 @@ def update_appointment(intent_request):
                         'Cập nhật lịch hẹn',
                         'Mời bạn chọn thời gian hẹn bác sĩ',
                         build_options('Time', speciality, doctor, date, None, psid, None, None, None)))
+        elif not Confirmation:
+            arr_date = date.split('-')
+            date_display = arr_date[2]+'/'+arr_date[1]+'/'+arr_date[0]
+            # kiểm tra GIỜ có hợp lệ không
+            valid = valid_appointment(doctor, speciality, date, time)
+            if valid == False: 
+                slots['Time']=None
+                message='Bác sĩ {} không thể khám bệnh vào {} ngày {}. Bạn hãy chọn một GIỜ khác đi ạ? ^_^'.format(Appointment,time,date_display)
+                return elicit_slot(
+                    output_session_attributes,
+                    intent_request['currentIntent']['name'],
+                    slots, 'Time', {
+                        'contentType': 'PlainText',
+                        'content': message
+                    },
+                    build_response_card(
+                        'Cập nhật lịch hẹn',
+                        'Mời bạn chọn thời gian hẹn bác sĩ',
+                        build_options('Time', speciality, doctor, date, None, psid, None, None, None)))
         elif Confirmation == "Có":
             try:
                 connection = psycopg2.connect(
                     "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
                 cursor = connection.cursor()
                 if doctor!=Appointment:
-                    select_query = "SELECT * FROM appointment_schedule as a where a.doctor='{}' and a.speciality='{}' and a.patient_name ilike '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(doctor,speciality,name,DateOfBird,PhoneNumber)
+                    select_query = "SELECT * FROM appointment_schedule as a where a.doctor='{}' and a.speciality='{}' and a.patient_name ilike '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(doctor,speciality,name,DateOfBird,PhoneNumber)
                     cursor.execute(select_query)
                     count = cursor.rowcount
                     if count!=0:
@@ -1716,7 +1815,7 @@ def update_appointment(intent_request):
                                 'contentType': 'PlainText',
                                 'content': 'Đã có một lịch hẹn khác với bác sĩ {} của khoa {} được đặt cho bệnh nhân {} mà chưa tới ngày hẹn cho nên bạn không thể cập nhật sang bác sĩ này.'.format(doctor,speciality,name)
                             })
-                sql_update_query = """Update appointment_schedule set doctor = '{}' , speciality='{}' , date='{}', time='{}' where doctor = '{}' and patient_name ILIKE '%{}' and date_of_birth='{}' and phone_number='{}' and date >= now()""".format(
+                sql_update_query = """Update appointment_schedule set doctor = '{}' , speciality='{}' , date='{}', time='{}' where doctor = '{}' and patient_name ILIKE '%{}' and date_of_birth='{}' and phone_number='{}' and (date>current_date or (date=current_date and time>current_time))""".format(
                         doctor, speciality, date, time, Appointment, name, DateOfBird, PhoneNumber)
                 cursor.execute(sql_update_query)
                 # sql_update_query = """Update appointment_schedule set date=%s , time=%s where patient_name = %s and date_of_birth=%s and phone_number=%s"""
@@ -1801,7 +1900,5 @@ def lambda_handler(event, context):
     logger.debug('event.bot.name={}'.format(event['bot']['name']))
 
     return dispatch(event)
-
-
 #update_appointment(xxx)
 # SELECT * FROM working_hours as wh, doctors as d , medical_specialities as ms where wh.doctor_id=d.id and ms.id=d.speciality_id and d.name='Dr Do Thanh Long' and ms.name='Cardiology'

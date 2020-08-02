@@ -21,6 +21,7 @@ import sys
 import urllib.parse as up
 from datetime import timedelta
 import urllib3
+import re
 
 
 sys.path.insert(0, '/psycopg2')
@@ -64,7 +65,7 @@ xxx = {
         "x-amz-lex:channel-id": "XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
         "x-amz-lex:webhook-endpoint-url": "https://channels.lex.us-east-1.amazonaws.com/facebook/webhook/XXX-XXXX-XXXXXXXXX",
         "x-amz-lex:accept-content-types": "PlainText",
-        "x-amz-lex:user-id": "2872158819534978",
+        "x-amz-lex:user-id": "2768186586569088",
         "x-amz-lex:channel-name": "FacebookLexBotAppName",
         "x-amz-lex:channel-type": "Facebook"
     }
@@ -552,11 +553,11 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
                 cursor.execute(
-                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(name, DateOfBird, PhoneNumber))
+                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(name, DateOfBird, PhoneNumber))
                 records = cursor.fetchall()
             else:
                 cursor.execute(
-                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.psid='{}' and a.date+1>now();".format(psid))
+                    "SELECT a.doctor, a.date FROM appointment_schedule as a WHERE a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(psid))
                 records = cursor.fetchall()
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
@@ -573,9 +574,9 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         for row in records:
             # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
             str_value = row[0]
-            date_of_appointment = row[1]
-            if date_of_appointment >= datetime.date.today():
-                set_doctor.add(str_value)
+            #date_of_appointment = row[1]
+            #if date_of_appointment >= datetime.date.today():
+            set_doctor.add(str_value)
         for i in set_doctor:
             temp = ({
                     'text': i,
@@ -759,9 +760,9 @@ def check_appointment(intent_request):
                     "dbname='qjunivvc' user='qjunivvc' host='arjuna.db.elephantsql.com' password='qcGs166MeIBq6DTtdOqCOs7l_lIJhcLL'")
                 cursor = connection.cursor()
                 if name and DateOfBird and PhoneNumber:
-                    query="SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now() order by a.date;".format(name,DateOfBird,PhoneNumber)
+                    query="SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time)) order by a.date, a.time;".format(name,DateOfBird,PhoneNumber)
                 else:
-                    query="SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' and a.date+1>now() order by a.date;".format(psid)
+                    query="SELECT distinct a.speciality, a.doctor, a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time)) order by a.date, a.time;".format(psid)
                 cursor.execute(query)
                 records = cursor.fetchall()
             except (Exception, psycopg2.Error) as error:
@@ -778,26 +779,27 @@ def check_appointment(intent_request):
             for row in records:
                 # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
                 str_value = row[1]
-                date_of_appointment = row[2]
-                if date_of_appointment >= datetime.date.today():
-                    if(str_value in set_doctor):
-                        continue
-                    set_doctor.add(str_value)
-                    temp = ({
-                        'text': str_value,
-                        'value': str_value})
-                    options.append(temp)
+                #date_of_appointment = row[2]
+                #if date_of_appointment >= datetime.date.today():
+                if(str_value in set_doctor):
+                    continue
+                set_doctor.add(str_value)
+                temp = ({
+                    'text': str_value,
+                    'value': str_value})
+                options.append(temp)
             temp = ({
                     'text': 'Kết thúc',
                     'value': 'Kết thúc'})
             options.append(temp)
             message = "Đây là các lịch hẹn hiện có của bạn: <3"
             for row in records:
-                date_of_appointment = row[2]
-                if date_of_appointment >= datetime.date.today():
-                    element = "\n * Bác sĩ {} của {} lúc {} ngày {},".format(
-                        row[1], row[0], row[3].strftime("%H:%M"), row[2].strftime("%d/%m/%Y"))
-                    message = message+element
+                #date_of_appointment = row[2]
+                #time_of_appointment = row[3]
+                #if date_of_appointment > datetime.datetime.now().date() or (date_of_appointment == datetime.datetime.now().date() and time_of_appointment>datetime.datetime.now().time()):
+                element = "\n * Bác sĩ {} của {} lúc {} ngày {},".format(
+                    row[1], row[0], row[3].strftime("%H:%M"), row[2].strftime("%d/%m/%Y"))
+                message = message+element
             message = message[0: -1]
             return elicit_slot(
                 output_session_attributes,
@@ -819,10 +821,10 @@ def check_appointment(intent_request):
                 cursor = connection.cursor()
                 if name and DateOfBird and PhoneNumber:
                     cursor.execute(
-                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(Appointment, name, DateOfBird, PhoneNumber))
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment, name, DateOfBird, PhoneNumber))
                 else:
                     cursor.execute(
-                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and a.date+1>now();".format(Appointment,psid))
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment,psid))
                 records = cursor.fetchall()
                 count = cursor.rowcount
                 if count == 0:
@@ -873,6 +875,21 @@ def check_appointment(intent_request):
                                 'Các bác sĩ tên {} của khoa'.format(Appointment),
                                 'Mời bạn chọn họ và tên đầy đủ của bác sĩ',
                                 options))
+                    if not name:
+                        slots['Name'] = None
+                        slots['DateOfBird'] = None
+                        slots['PhoneNumber'] = None
+                        slots['AccountFBMakeAppointment'] = "Tài khoản khác"
+                        return elicit_slot(
+                            output_session_attributes,
+                            intent_request['currentIntent']['name'],
+                            slots,
+                            'Name',
+                            {
+                                'contentType': 'PlainText',
+                                'content': 'Tài khoản này đã đặt nhiều lịch hẹn với bác sĩ {}, để cập nhật chính xác lịch hẹn, mình cần biết HỌ TÊN của bệnh nhân?'.format(Appointment)
+                            },
+                            None)
                     #nếu lịch hẹn cùng 1 bệnh nhân, cùng 1 tài khoản đặt thì hủy toàn bộ lịch đó(nhưng sẽ chặn trường hợp này trong xử lý MakeAppointment)
             except (Exception, psycopg2.Error) as error:
                 print("Error while connecting to PostgreSQL", error)
@@ -927,6 +944,9 @@ def check_appointment(intent_request):
                     'Các lựa chọn dành cho bạn',
                     build_options('Confirmation', None, None, None, None, psid, None, None, None))
             )
+        else:
+            slots['HospitalService']=None
+            return delegate(output_session_attributes, slots)
         return delegate(output_session_attributes, slots)
     return elicit_slot(
         output_session_attributes,

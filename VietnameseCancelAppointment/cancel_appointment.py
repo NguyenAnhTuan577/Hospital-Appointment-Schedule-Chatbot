@@ -21,6 +21,7 @@ import sys
 import urllib.parse as up
 from datetime import timedelta
 import urllib3
+import re
 
 
 sys.path.insert(0, '/psycopg2')
@@ -741,11 +742,11 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
             # Print PostgreSQL version
             if name and DateOfBird and PhoneNumber:
                 cursor.execute(
-                    "SELECT a.doctor,a.date FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and date+1>now();".format(name, DateOfBird, PhoneNumber))
+                    "SELECT distinct a.doctor,a.date, a.time FROM appointment_schedule as a WHERE a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time)) order by a.date, a.time;".format(name, DateOfBird, PhoneNumber))
                 records = cursor.fetchall()
             else:
                 cursor.execute(
-                    "SELECT a.doctor,a.date FROM appointment_schedule as a WHERE a.psid='{}' and date+1>now();".format(psid))
+                    "SELECT distinct a.doctor,a.date, a.time FROM appointment_schedule as a WHERE a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time)) order by a.date, a.time;".format(psid))
                 records = cursor.fetchall()
         except (Exception, psycopg2.Error) as error:
             print("Error while connecting to PostgreSQL", error)
@@ -760,15 +761,13 @@ def build_options(slot, speciality, doctor, date, time, psid, name, DateOfBird, 
         if len(records) == 0:
             return None
         for row in records:
-            # str_value=row[1]+', '+row[4].strftime("%H:%M")+', '+row[3].strftime("%d/%m/%Y")
             str_value = row[0]
-            date_of_appointment = row[1]
-            if date_of_appointment >= datetime.date.today():
-                set_doctor.add(str_value)
-        for i in set_doctor:
+            if(str_value in set_doctor):
+                continue
+            set_doctor.add(str_value)
             temp = ({
-                    'text': i,
-                    'value': i})
+                'text': str_value,
+                'value': str_value})
             res.append(temp)
         temp = ({
                 'text': 'Khác',
@@ -899,7 +898,7 @@ def cancel_appointment(intent_request):
                         intent_request['currentIntent']['name'],
                         slots, 'Appointment', {
                             'contentType': 'PlainText',
-                            'content': 'Chào {}! Đây là các lịch được đặt bởi tài khoản facebook này. Không biết bạn muốn hủy lịch hẹn với bác sĩ nào ạ? (Bạn cũng có thể hủy hẹn được đặt bởi tài khoản FB khác thông qua thông tin bệnh nhân)'.format(fb_first_name)
+                            'content': 'Chào {}! Đây là các lịch được đặt bởi tài khoản facebook này. Không biết bạn muốn HỦY LỊCH HẸN với BÁC SĨ nào ạ? (Bạn cũng có thể hủy hẹn được đặt bởi tài khoản FB khác thông qua thông tin bệnh nhân)'.format(fb_first_name)
                         },
                         build_response_card(
                             'Bạn có các lịch hẹn với các bác sĩ sau đây',
@@ -1084,10 +1083,10 @@ def cancel_appointment(intent_request):
                 cursor = connection.cursor()
                 if name and DateOfBird and PhoneNumber:
                     cursor.execute(
-                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and a.date+1>now();".format(Appointment, name, DateOfBird, PhoneNumber))
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.patient_name ILIKE '%{}' and a.date_of_birth='{}' and a.phone_number='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment, name, DateOfBird, PhoneNumber))
                 else:
                     cursor.execute(
-                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and a.date+1>now();".format(Appointment,psid))
+                        "SELECT a.patient_name, a.date_of_birth, a.phone_number, a.doctor FROM appointment_schedule as a WHERE a.doctor ilike '%{}' and a.psid='{}' and (a.date>current_date or (a.date=current_date and a.time>current_time));".format(Appointment,psid))
                 records = cursor.fetchall()
                 count = cursor.rowcount
                 if count == 0:
@@ -1136,13 +1135,18 @@ def cancel_appointment(intent_request):
                             options))
                 elif count>1:
                     element_of_name = Appointment.split(' ')
-                    if len(element_of_name) == 1:
-                        options = []
-                        for row in records:
-                            temp = {
-                                'text': row[3],
-                                'value': row[3]}
-                            options.append(temp)
+                    set_doctor = set()
+                    options = []
+                    for row in records:
+                        str_value = row[3]
+                        if(str_value in set_doctor):
+                            continue
+                        set_doctor.add(str_value)
+                        temp = ({
+                            'text': str_value,
+                            'value': str_value})
+                        options.append(temp)
+                    if len(options) > 1:
                         return elicit_slot(
                             output_session_attributes,
                             intent_request['currentIntent']['name'],
@@ -1154,10 +1158,12 @@ def cancel_appointment(intent_request):
                                 'Các bác sĩ tên {} của khoa'.format(Appointment),
                                 'Mời bạn chọn HỌ VÀ TÊN đầy đủ của bác sĩ',
                                 options))
-                    if not name:
+                    elif not name: #chỉ có bác sĩ nhưng có nhiều bệnh nhân đã đặt vs tài khoản này
                         slots['Name'] = None
                         slots['DateOfBird'] = None
                         slots['PhoneNumber'] = None
+                        slots['Appointment'] = records[0][3]
+                        Appointment  = records[0][3]
                         slots['AccountFBMakeAppointment'] = "Tài khoản khác"
                         return elicit_slot(
                             output_session_attributes,
@@ -1217,6 +1223,12 @@ def cancel_appointment(intent_request):
                                     'content': 'Số điện thoại trên không hợp lệ, bạn hãy nhập SỐ ĐIỆN THOẠI chính xác?'
                                 }, None)
                     #nếu lịch hẹn cùng 1 bệnh nhân, cùng 1 tài khoản đặt thì hủy toàn bộ lịch đó(nhưng sẽ chặn trường hợp này trong xử lý MakeAppointment)
+                else:
+                    slots['Name'] = records[0][0]
+                    slots['DateOfBird'] = records[0][1].strftime('%Y-%m-%d')
+                    slots['PhoneNumber'] = records[0][2]
+                    slots['Appointment'] = records[0][3]
+                    Appointment=records[0][3]
             except (Exception, psycopg2.Error) as error:
                 print("Error while connecting to PostgreSQL", error)
             finally:
@@ -1235,10 +1247,10 @@ def cancel_appointment(intent_request):
 
                 cursor = connection.cursor()
                 if name and DateOfBird and PhoneNumber:
-                    sql_delete_query = """Delete from appointment_schedule where doctor ilike '%{}' and patient_name ILIKE '%{}'  and date_of_birth='{}' and phone_number='{}' and date+1>now();""".format(Appointment, name, DateOfBird, PhoneNumber)
+                    sql_delete_query = """Delete from appointment_schedule where doctor ilike '%{}' and patient_name ILIKE '%{}'  and date_of_birth='{}' and phone_number='{}' and (date>current_date or (date=current_date and time>current_time));""".format(Appointment, name, DateOfBird, PhoneNumber)
                     cursor.execute(sql_delete_query)
                 else:
-                    sql_delete_query = """Delete from appointment_schedule where doctor ilike '%{}' and psid='{}' and date+1>now();""".format(Appointment, psid)
+                    sql_delete_query = """Delete from appointment_schedule where doctor ilike '%{}' and psid='{}' and (date>current_date or (date=current_date and time>current_time));""".format(Appointment, psid)
                     cursor.execute(sql_delete_query)
                 connection.commit()
                 count = cursor.rowcount
